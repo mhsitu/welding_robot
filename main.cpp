@@ -1,4 +1,5 @@
 /* Includes ------------------------------------------------------------------*/
+#include <iostream>
 #include "coppeliaSim.h"
 #include "sys_log.h"
 
@@ -65,7 +66,6 @@ int main(int argc, char *argv[])
         System Logger tool init.
     */
     std::cout << "[System Logger] Configuring... \n";
-    SysLog->getMilliTick_regist(getSimTime);
     std::cout << "[System Logger] Logger is ready ! \n";
 
     /*
