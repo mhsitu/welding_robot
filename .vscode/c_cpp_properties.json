@@ -1,0 +1,38 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "NON_MATLAB_PARSING",
+                "MAX_EXT_API_CONNECTIONS=255",
+                "TWO_LEGGED_WHEEL"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-x64",
+            "configurationProvider": "vector-of-bool.cmake-tools"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "NON_MATLAB_PARSING",
+                "MAX_EXT_API_CONNECTIONS=255",
+                "TWO_LEGGED_WHEEL"
+            ],
+            "windowsSdkVersion": "10.0.18362.0",
+            "compilerPath": "C:/MinGW/bin/gcc.exe",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "gcc-x86",
+            "cStandard": "c99",
+            "configurationProvider": "go2sh.cmake-integration"
+        }
+    ],
+    "version": 4
+}
