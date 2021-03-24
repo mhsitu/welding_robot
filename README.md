@@ -35,3 +35,73 @@
 
 - Qt ([version 5.12.0 +](http://download.qt.io/archive/qt/5.12/5.12.9/), Windows上不需要安装)
 
+
+## **coppeliaSim-client**
+> coppeliasim-client是基于官方提供的remoteAPI进行再封装的C++接口
+### **使用简介**
+
+1. API的使用
+
+- 使用模块主要涉及三个函数：
+
+```c++
+/*
+  函数作用：
+  开始与模拟器的通信
+
+  参数说明：
+  - p_IP: 仿真软件的地址，通常为"127.0.0.1"
+  - p_connection_port: 使用的端口号，需要和仿真主脚本启动时候填写的一致，通常可以给5000
+  - commThreadCycleInMs: 每次和模拟器通信的间隔，通常设置5ms
+  - sysnchronousMode: true为开启同步仿真模式
+  - multiClientMode: 多客户端模式，通常为flase
+
+  返回值：连接成功返回true，否则为false
+
+  例：
+  Start("127.0.0.1", 5000, 5, true);
+*/
+bool Start(const char* p_IP, int32_t p_conection_port, int commThreadCycleInMs, bool synchronousMode = false, bool multiClientMode = false);
+
+/*
+  函数作用：
+  添加一个模型中存在的对象以及要对这个对象进行的操作，如读取关节速度、角度，读取传感器数据，摄像头图片，或者设置关节转动角度，速度等
+
+  参数说明：
+  - full_name: 对象在仿真软件中的名字，一定要完全匹配否则找不到对象
+  - type：对象的类型，详细类型参考下面对数据结构的解释
+  - operation_ls: 要进行的操作列表，可操作的数据参考下面对数据结构的解释
+
+  返回值：如果添加成功，返回操作对象的地址，可以直接从这个地址读取反馈的数值；添加失败时返回NULL。
+
+  例（添加名为“Joint1”的关节对象，读取当前速度和写入目标速度，读取当前角度和写入目标角度）：
+  CoppeliaSim->Add_Object("Joint1", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+*/
+_simObjectHandle_Type *Add_Object(std::string full_name, _simObj_Type type, std::initializer_list<simxInt> operation_ls);
+
+/*
+  函数作用：
+  每次调用这个函数，就会自动执行使用Add_Object()函数添加的一系列读写操作，一般会循环不停地调用这个函数。
+
+  例：
+  while(1)
+  {
+    ComWithServer();
+  }
+*/
+bool ComWithSevrer()
+```
+
+2. 核心的数据结构（具体查看头文件的枚举类型）
+
+- `_simOP_Type`: 操作类型（Operation Type），可对某个对象进行不同类型的操作，包括修改或读取位置、姿态、四元数、速度、力等。
+- `_simIO_Type`: 输入输出类型（Input/Output Type），有只读（Read Only），只写（Write Only）和读写（Read and Write）三种。在Coppeliasim中不支持的操作将被跳过，比如不能写入传感器的值而只能读取它。
+
+- `_simObj_Type`:对象类型（Object Type），模块里面暂时只提供了四种对象类型，分别是关节（Joint）、视觉传感器（Vision sensor）、力传感器（Force sensor）和其他对象（Other Object），对应Coppeliasim里面的不同对象类型。
+
+- `_simOPData_Struct`:操作数据结构体，保存有不同类型的数据，在配置好对象要进行的操作之后，就会自动从服务器端读入数据到对应的变量中或自动写入到服务器端。注意设置或读取的时候要区分“obj_Data”和“obj_Target”
+
+### **项目演示**
+下面根据本项目的main文件，对整个使用过程进行总结演示：
+
+1. 
