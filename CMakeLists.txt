@@ -37,7 +37,7 @@ add_subdirectory(coppeliaSim-client)
 #Add libs and include_directories -------------------------------------------------------------------------#
 include_directories(".")
 include_directories("common")
-include_directories("core_test")
+include_directories("core")
 include_directories("coppeliaSim-client")
 include_directories("coppeliaSim-client/include")
 include_directories("coppeliaSim-client/include/stack")

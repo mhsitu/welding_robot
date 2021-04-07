@@ -2,7 +2,8 @@
 #include <iostream>
 #include "coppeliaSim.h"
 #include "sys_log.h"
-
+#include "core/BezierCurve.h"
+#include "core/Timer.h"
 /* Usr defines ---------------------------------------------------------------*/
 using namespace std;
 enum Pose_t {
@@ -12,6 +13,11 @@ enum Pose_t {
 _simSignalHandle_Type *Tip[6];
 _simObjectHandle_Type *Joint[6];
 
+BezierCurve<float, 3, 2> straight_line;
+Timer timer;
+bool is_running = false;
+float start_time = 0;
+float total_time = 0;
 /* Founctions ----------------------------------------------------------------*/
 
 /**
@@ -20,7 +26,33 @@ _simObjectHandle_Type *Joint[6];
 void Usr_Main()
 {
     //这里是主循环，可以运行我们的各部分算法
+    if(is_running == true)
+    {
+        float now_time = (float)timer.getMs() - start_time;
+        if (now_time >= total_time)
+            is_running = false;
 
+        float target_pt[3] = {};
+        straight_line.getCurvePoint(now_time, target_pt);
+        cout << "Target(x,y,z):" << target_pt[0] << ", " << target_pt[1] << ", " << target_pt[2] << endl;
+    }
+    else{
+        //Set points
+        float current_pt[3] = {Tip[x]->data, Tip[y]->data, Tip[z]->data};
+        float next_pt[3];
+        float **ctrl_pt = new float *[3];
+        ctrl_pt[0] = current_pt;
+        ctrl_pt[1] = next_pt;
+        //Set time
+        cout << "Current point:(" << current_pt[0] << ", " << current_pt[1] << ", " << current_pt[2] << ")" << endl;
+        cout << "Next point(x, y, z): " << endl;
+        cin >> next_pt[0] >> next_pt[1] >> next_pt[2] >> total_time ;
+
+        straight_line.SetParam(ctrl_pt, total_time);
+
+        start_time = timer.getMs();
+        is_running = true;
+    }
 }
 
 /**
