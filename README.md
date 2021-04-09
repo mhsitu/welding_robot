@@ -102,6 +102,9 @@ bool ComWithSevrer()
 - `_simOPData_Struct`:操作数据结构体，保存有不同类型的数据，在配置好对象要进行的操作之后，就会自动从服务器端读入数据到对应的变量中或自动写入到服务器端。注意设置或读取的时候要区分“obj_Data”和“obj_Target”
 
 ### **项目演示**
-下面根据本项目的main文件，对整个使用过程进行总结演示：
+下面对直线焊接进行演示：
+- 直线焊接
 
-1. 
+  ![](img/straight_line.gif)
+
+  ![](img/straight_line2.gif)
