@@ -4,8 +4,10 @@
 #include "sys_log.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
+#include "core/ACS.hpp"
 /* Usr defines ---------------------------------------------------------------*/
 using namespace std;
+
 enum Pose_t {
     x, y, z, alpha, beta, gamma
 };
@@ -19,12 +21,14 @@ _simObjectHandle_Type *platform[2];
 BezierCurve<float, 3, 2> straight_line;
 BezierCurve<float, 2, 2> platform_angle;
 Timer timer;
-int type;
+int demo_type;
 bool is_running = false;
 float start_time = 0;
 float total_time = 0;
 float current_pt[6];
 float target_pt[6];
+ACS AntColony("kroA100.tsp", 2);
+
 /* Founctions ----------------------------------------------------------------*/
 void manual_input()
 {
@@ -36,7 +40,7 @@ void manual_input()
         if (now_time >= total_time)
             is_running = false;
 
-        if(type == 1)
+        if (demo_type == 1)
         {
             float res[3] = {};
             straight_line.getCurvePoint(now_time, res);
@@ -45,7 +49,7 @@ void manual_input()
             target_pt[2] = res[2];
             cout << "Target(x,y,z):" << target_pt[0] << ", " << target_pt[1] << ", " << target_pt[2] << endl;
         }
-        else if(type == 2)
+        else if (demo_type == 2)
         {
             float res[2];
             platform_angle.getCurvePoint(now_time, res);
@@ -62,8 +66,8 @@ void manual_input()
     {
         //Select type
         cout << "Please choose control type: 1) Manipulator 2) Platform -- ";
-        cin >> type;
-        if(type == 1)
+        cin >> demo_type;
+        if (demo_type == 1)
         {
             //Set terminal points
             float start_pt[3] = {current_pt[0], current_pt[1], current_pt[2]};
@@ -80,7 +84,7 @@ void manual_input()
             start_time = timer.getMs();
             is_running = true;
         }
-        else if(type == 2)
+        else if (demo_type == 2)
         {
             //Set terminal points
             float start_pt[2] = {platform[0]->obj_Data.angle_f, platform[1]->obj_Data.angle_f};
@@ -179,6 +183,11 @@ void Usr_ReadFromSimulation()
 */
 int main(int argc, char *argv[])
 {
+    AntColony.computeSolution();
+    while(1)
+    {
+        
+    }
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
     /*
         System Logger tool init.
