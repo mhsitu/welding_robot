@@ -1,9 +1,13 @@
 /**
   ******************************************************************************
   * @file    ACS.hpp
-  * @author  Mentos Seetoo
   * @brief   Simple class for Ant Colony System.
+  * @author  Xing He(Huazhong University of Science and Technology)
+  *          Modefied by Stuart(South China University of Technology)
+  * @date    18/04/2021
   * @version 0.1
+  * @note    Original version please visit: https://paste.ubuntu.com/25353205/
+  *          to see more.
   ******************************************************************************
 */
 #ifndef _ACS_HPP
@@ -85,24 +89,24 @@ class ACS
 {
 private:
     int type;           // type == 1 全矩阵, type == 2 二维欧拉距离
-    int city_num;       //城市数量
-    double **dis;       //城市间距离
-    double **pheromone; //信息素
-    double **herustic;  //启发式值
+    int city_num;       // 城市数量
+    double **dis;       // 城市间距离
+    double **pheromone; // 信息素
+    double **herustic;  // 启发式值
     double **info;      // info = pheromone ^ delta * herustic ^ beta
-    double pheromone_0; //pheromone初始值，这里是1 / (avg * N)其中avg为
-                        //图网中所有边边权的平均数。
-    int colony_num;     //种群数量
-    int delta, beta;    //delta 和 beta分别表示pheromones 和 herustic的比重
-    double alpha;       //evaporation parameter，挥发参数，每次信息素要挥发的量
-    int *r1, *s, *r;    //agent k的出发城市，下一个点，当前点。
+    double pheromone_0; // pheromone初始值，这里是1 / (avg * N)其中avg为
+                        // 图网中所有边边权的平均数。
+    int colony_num;     // 种群数量
+    int delta, beta;    // delta 和 beta分别表示pheromones 和 herustic的比重
+    double alpha;       // evaporation parameter，挥发参数，每次信息素要挥发的量
+    int *r1, *s, *r;    // agent k的出发城市，下一个点，当前点。
     int MAX_itera, index_itera; //最大迭代次数，迭代计数变量
     std::set<int> empty, *J;
 
     ACS_Tour *tour, best;
     vertex *node;
     bool init_flag;
-
+    std::map<pair_int, > tour1;
     //欧拉距离
     double EUC_2D(const vertex &a, const vertex &b)
     {
@@ -295,7 +299,7 @@ public:
                 {
                     dis[i][j] = EUC_2D(node[i], node[j]); // 计算距离
                     tmp += i != j ? dis[i][j] : 0;        // i == j的时候 dis不存在，所以不考虑。
-                    cnt += i != j ? 1 : 0;                // i == j的时候 dis不存在，所以不考虑。
+                      += i != j ? 1 : 0;                  // i == j的时候 dis不存在，所以不考虑。
                 }
             }
         }

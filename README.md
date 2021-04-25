@@ -1,6 +1,6 @@
 # **智能焊接机器人**
 ## **简介**
-- 本项目为华南理工大学2017级自动化本科生毕业设计项目。 
+- 本项目为华南理工大学2017级自动化本科生毕业设计项目。
 - 包含基于Coppeliasim搭建的仿真系统，仿真接口目前仅支持C++。
 - 包含在实物系统上运行的代码。
 
@@ -108,3 +108,6 @@ bool ComWithSevrer()
   ![](img/straight_line.gif)
 
   ![](img/straight_line2.gif)
+
+### **参考文献**
+  1. X. Wang, L. Xue, Y. Yan, and X. Gu, “Welding robot collision-free path optimization,” Appl. Sci., vol. 7, no. 2, 2017, doi: 10.3390/app7020089.

@@ -4,7 +4,7 @@
 #include "sys_log.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
-#include "core/ACS.hpp"
+#include "core/ACS_3D.hpp"
 /* Usr defines ---------------------------------------------------------------*/
 using namespace std;
 
@@ -27,7 +27,7 @@ float start_time = 0;
 float total_time = 0;
 float current_pt[6];
 float target_pt[6];
-ACS AntColony("kroA100.tsp", 2);
+//ACS AntColony("kroA100.tsp", 2);
 
 /* Founctions ----------------------------------------------------------------*/
 void manual_input()
@@ -183,11 +183,9 @@ void Usr_ReadFromSimulation()
 */
 int main(int argc, char *argv[])
 {
+    ACS_Base AntColony;
+    AntColony.initParamFromFile("kroA100.tsp");
     AntColony.computeSolution();
-    while(1)
-    {
-        
-    }
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
     /*
         System Logger tool init.
