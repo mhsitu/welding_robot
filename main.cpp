@@ -5,11 +5,19 @@
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
 #include "core/ACS_3D.hpp"
+#include "core/readSTL.hpp"
+#include "core/ACS.hpp"
 /* Usr defines ---------------------------------------------------------------*/
 using namespace std;
 
-enum Pose_t {
-    x, y, z, alpha, beta, gamma
+enum Pose_t
+{
+    x,
+    y,
+    z,
+    alpha,
+    beta,
+    gamma
 };
 
 _simObjectHandle_Type *Tip_target;
@@ -27,15 +35,14 @@ float start_time = 0;
 float total_time = 0;
 float current_pt[6];
 float target_pt[6];
-//ACS AntColony("kroA100.tsp", 2);
 
 /* Founctions ----------------------------------------------------------------*/
 void manual_input()
 {
-    
+
     if (is_running == true)
     {
-        // exit: current time > move time ? 
+        // exit: current time > move time ?
         float now_time = (float)timer.getMs() - start_time;
         if (now_time >= total_time)
             is_running = false;
@@ -59,7 +66,6 @@ void manual_input()
         }
         else
         {
-
         }
     }
     else
@@ -93,7 +99,7 @@ void manual_input()
             ctrl_pt[0] = start_pt;
             ctrl_pt[1] = next_pt;
             cout << "Current point:(" << platform[0]->obj_Data.angle_f << ", " << platform[1]->obj_Data.angle_f << ")" << endl;
-            cout<< "Target angle(pitch, yaw) and Time(t): ";
+            cout << "Target angle(pitch, yaw) and Time(t): ";
             cin >> next_pt[0] >> next_pt[1] >> total_time;
 
             platform_angle.SetParam(ctrl_pt, total_time);
@@ -101,7 +107,8 @@ void manual_input()
             start_time = timer.getMs();
             is_running = true;
         }
-        else{
+        else
+        {
             cout << "Unidentified type, please select again." << endl;
         }
     }
@@ -143,9 +150,9 @@ void Usr_ConfigSimulation()
     target_pt[beta] = M_PI_2;
     target_pt[gamma] = -M_PI_2;
 
-    Tip_target->obj_Target.position_3f[0] = target_pt[x] + 1.7; 
-    Tip_target->obj_Target.position_3f[1] = target_pt[y] + 0;   
-    Tip_target->obj_Target.position_3f[2] = target_pt[z] + 0;   
+    Tip_target->obj_Target.position_3f[0] = target_pt[x] + 1.7;
+    Tip_target->obj_Target.position_3f[1] = target_pt[y] + 0;
+    Tip_target->obj_Target.position_3f[2] = target_pt[z] + 0;
     Tip_target->obj_Target.orientation_3f[0] = target_pt[alpha];
     Tip_target->obj_Target.orientation_3f[1] = target_pt[beta];
     Tip_target->obj_Target.orientation_3f[2] = target_pt[gamma];
@@ -158,9 +165,9 @@ void Usr_ConfigSimulation()
 void Usr_SendToSimulation()
 {
     //这里可以设置关节指令
-    Tip_target->obj_Target.position_3f[0] = target_pt[x] + 1.7; 
-    Tip_target->obj_Target.position_3f[1] = target_pt[y] + 0;   
-    Tip_target->obj_Target.position_3f[2] = target_pt[z] + 0;   
+    Tip_target->obj_Target.position_3f[0] = target_pt[x] + 1.7;
+    Tip_target->obj_Target.position_3f[1] = target_pt[y] + 0;
+    Tip_target->obj_Target.position_3f[2] = target_pt[z] + 0;
     Tip_target->obj_Target.orientation_3f[0] = target_pt[alpha];
     Tip_target->obj_Target.orientation_3f[1] = target_pt[beta];
     Tip_target->obj_Target.orientation_3f[2] = target_pt[gamma];
@@ -183,9 +190,26 @@ void Usr_ReadFromSimulation()
 */
 int main(int argc, char *argv[])
 {
-    ACS_Base AntColony;
-    AntColony.initParamFromFile("kroA100.tsp");
-    AntColony.computeSolution();
+    STLReader model;
+    //ACS_Base AntColony;
+    //ACS AntColony("kroA100.tsp", 2);
+    //AntColony.computeSolution();
+    //AntColony.initParamFromFile("kroA100.tsp");
+    //AntColony.computeSolution();
+    model.ReadFile("test.stl");
+    const std::vector<Triangles<float>> list = model.TriangleList();
+
+    for (int i(0); i < list.size(); i++)
+    {
+        std::cout << "Normal vector:" << list[i].nor_vec.x << ", " << list[i].nor_vec.y << ", " << list[i].nor_vec.z << std::endl;
+        std::cout << "Vertex 0:" << list[i].vertex[0].x << ", " << list[i].vertex[0].y << ", " << list[i].vertex[0].z << std::endl;
+        std::cout << "Vertex 1:" << list[i].vertex[1].x << ", " << list[i].vertex[1].y << ", " << list[i].vertex[1].z << std::endl;
+        std::cout << "Vertex 2:" << list[i].vertex[2].x << ", " << list[i].vertex[2].y << ", " << list[i].vertex[2].z << std::endl;
+    }
+    while(1)
+    {
+
+    }
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
     /*
         System Logger tool init.
@@ -197,7 +221,9 @@ int main(int argc, char *argv[])
         Simulation connection init.
     */
     std::cout << "[CoppeliaSim Client] Connecting to server.. \n";
-    while (!hClient->Start("127.0.0.1", 5000, 5, false)){};
+    while (!hClient->Start("127.0.0.1", 5000, 5, false))
+    {
+    };
     std::cout << "[CoppeliaSim Client] Successfully connected to server, configuring...\n";
     Usr_ConfigSimulation();
     std::cout << "[CoppeliaSim Client] Configure done, simulation is ready ! \n";
@@ -210,7 +236,7 @@ int main(int argc, char *argv[])
         {
             hClient->ComWithServer();
         }
-        if(init_num > 0)
+        if (init_num > 0)
             init_num--;
         else
         {
@@ -220,6 +246,5 @@ int main(int argc, char *argv[])
         }
     };
 }
-
 
 /************************* END-OF-FILE SCUT-ROBOTLAB **************************/

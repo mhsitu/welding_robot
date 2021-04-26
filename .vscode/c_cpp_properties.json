@@ -30,7 +30,7 @@
             "compilerPath": "C:/MinGW/bin/gcc.exe",
             "cppStandard": "c++14",
             "intelliSenseMode": "gcc-x86",
-            "cStandard": "c99",
+            "cStandard": "c11",
             "configurationProvider": "go2sh.cmake-integration"
         }
     ],

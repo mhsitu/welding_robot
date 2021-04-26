@@ -277,19 +277,20 @@ private:
         float rnd = (float)(rand()) / (float)RAND_MAX;
         rnd *= total;
 
-        for_each(J.begin(), J.end(), [&](auto _it) {
-            prob_sum += info_matrix[cur->id][_it->id].info;
+        for (int i = 0, s = J.size(); i < s; i++)
+        {
+            prob_sum += info_matrix[cur->id][J[i]->id].info;
             if (prob_sum >= rnd)
             {
-                next = _it;
-                agentK.addNextNode(_it, info_matrix[cur->id][_it->id].distance);
+                next = J[i];
+                agentK.addNextNode(J[i], info_matrix[cur->id][J[i]->id].distance);
                 // 到终点
                 if (next == end_node)
                     return false;
                 else
                     return true;
             }
-        });
+        }
 
         agentK.setDeadEnd();
         return false;

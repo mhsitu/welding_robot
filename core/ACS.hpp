@@ -106,7 +106,7 @@ private:
     ACS_Tour *tour, best;
     vertex *node;
     bool init_flag;
-    std::map<pair_int, > tour1;
+
     //欧拉距离
     double EUC_2D(const vertex &a, const vertex &b)
     {
@@ -299,7 +299,7 @@ public:
                 {
                     dis[i][j] = EUC_2D(node[i], node[j]); // 计算距离
                     tmp += i != j ? dis[i][j] : 0;        // i == j的时候 dis不存在，所以不考虑。
-                      += i != j ? 1 : 0;                  // i == j的时候 dis不存在，所以不考虑。
+                    cnt += i != j ? 1 : 0;                // i == j的时候 dis不存在，所以不考虑。
                 }
             }
         }

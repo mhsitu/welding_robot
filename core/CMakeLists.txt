@@ -2,6 +2,8 @@
 include_directories(".")
 file(GLOB SOURCE "*.cpp")
 
+set( CMAKE_C_STANDARD 11)
+
 add_library(core STATIC ${SOURCE})
 
 #Add common
