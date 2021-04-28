@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.12)
 
 project(welding_robot)
 
+if(UNIX)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}-m64")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}-m64")
+endif()
+
 #Make sure no in-source build -----------------------------------------------------------------------------#
 if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
@@ -11,6 +16,7 @@ endif ()
 set( CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set( CMAKE_CXX_STANDARD 14)
 set( CMAKE_C_STANDARD 11)
+
 set( EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/bin) 
 set( LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/lib) 
 
@@ -42,7 +48,7 @@ include_directories("coppeliaSim-client")
 include_directories("coppeliaSim-client/include")
 include_directories("coppeliaSim-client/include/stack")
 include_directories("coppeliaSim-client/remoteApi")
-
+include_directories("C:/Users/bun-i/AppData/Local/Programs/Python/Python38/include/")
 file(GLOB USER_SOURCE "*.cpp")
 add_executable(${PROJECT_NAME} ${USER_SOURCE})
 

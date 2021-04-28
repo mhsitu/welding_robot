@@ -1,15 +1,15 @@
 # **智能焊接机器人**
-## **简介**
-- 本项目为华南理工大学2017级自动化本科生毕业设计项目。
+## **一、简介**
+- 本项目为华南理工大学2017级自动化毕业设计项目。
 - 包含基于Coppeliasim搭建的仿真系统，仿真接口目前仅支持C++。
 - 包含在实物系统上运行的代码。
-
-## **如何运行这个程序？**
+- 本项目所有功能已进行模块化，需要使用部分功能可快速移植调用
+## **二、如何运行这个程序？**
 
 ### **1. 在仿真环境中运行**
 
 - **编译运行：**
-  1. 检查文件夹目录中是否为全英文，包含中文会报错
+  1. 检查文件夹路径中是否为全英文，路径包含中文会报错
   2. 打开vscode， 编译并运行`./build/bin/welding_robot.exe`
 
 - **开始仿真：**
@@ -18,7 +18,7 @@
 ### **2. 在实物系统上运行** 
 
 
-## **环境依赖**
+## **三、环境依赖**
 
 ### **运行环境 :**
 
@@ -29,14 +29,18 @@
 
 - CMake (version 3.12.0 +) 
 
+- Python(version 3.0 +)
+
+  用于数据可视化。Python的版本的位数取决于取决于编译器的编译类型。然而在Windows10平台上，推荐安装的MinGW只能编译32位程序，因此Windows10上请安装Python-32bit。
+
 ### **仿真环境 :**
 
-- Coppeliasim 4.0.1 (推荐版本)
+- Coppeliasim 4.1.1 (推荐版本)
 
 - Qt ([version 5.12.0 +](http://download.qt.io/archive/qt/5.12/5.12.9/), Windows上不需要安装)
 
 
-## **coppeliaSim-client**
+## **四、CoppeliaSim Client**
 > coppeliasim-client是基于官方提供的remoteAPI进行再封装的C++接口
 ### **使用简介**
 
@@ -102,12 +106,12 @@ bool ComWithSevrer()
 - `_simOPData_Struct`:操作数据结构体，保存有不同类型的数据，在配置好对象要进行的操作之后，就会自动从服务器端读入数据到对应的变量中或自动写入到服务器端。注意设置或读取的时候要区分“obj_Data”和“obj_Target”
 
 ### **项目演示**
-下面对直线焊接进行演示：
+演示代码位于main.cpp，下面对直线焊接进行演示：
 - 直线焊接
 
   ![](img/straight_line.gif)
 
   ![](img/straight_line2.gif)
 
-### **参考文献**
+## **参考文献**
   1. X. Wang, L. Xue, Y. Yan, and X. Gu, “Welding robot collision-free path optimization,” Appl. Sci., vol. 7, no. 2, 2017, doi: 10.3390/app7020089.

@@ -1,11 +1,11 @@
 /**
   ******************************************************************************
-  * @file    readSTL.hpp
+  * @file    read_STL.hpp
   * @brief   Class to read meshes from STL file.
   * @author  Stuart(South China University of Technology)
   *          1356046979@qq.com
   * @date    23/04/2021
-  * @version 0.1
+  * @version 1.0
   ******************************************************************************
 */
 #ifndef _READ_STL_HPP

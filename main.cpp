@@ -1,15 +1,17 @@
 /* Includes ------------------------------------------------------------------*/
+#include "matplotlibcpp.h"
 #include <iostream>
 #include "coppeliaSim.h"
 #include "sys_log.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
 #include "core/ACS_3D.hpp"
-#include "core/readSTL.hpp"
+#include "core/read_STL.hpp"
 #include "core/ACS.hpp"
+
 /* Usr defines ---------------------------------------------------------------*/
 using namespace std;
-
+namespace plt = matplotlibcpp;
 enum Pose_t
 {
     x,
@@ -191,11 +193,14 @@ void Usr_ReadFromSimulation()
 int main(int argc, char *argv[])
 {
     STLReader model;
+    plt::plotTraj(3, 0, 0, 0);
+    plt::show();
     //ACS_Base AntColony;
     //ACS AntColony("kroA100.tsp", 2);
     //AntColony.computeSolution();
     //AntColony.initParamFromFile("kroA100.tsp");
     //AntColony.computeSolution();
+
     model.ReadFile("test.stl");
     const std::vector<Triangles<float>> list = model.TriangleList();
 
