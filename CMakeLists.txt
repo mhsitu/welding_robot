@@ -29,10 +29,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
-add_definitions(-DLOCAL_SIMULATION)
+
 add_definitions(-DNON_MATLAB_PARSING
                 -DMAX_EXT_API_CONNECTIONS=255
-                -DWITHOUT_NUMPY
                 -DDO_NOT_USE_SHARED_MEMORY)
 
 #Add sub directories --------------------------------------------------------------------------------------#
@@ -48,11 +47,17 @@ include_directories("coppeliaSim-client")
 include_directories("coppeliaSim-client/include")
 include_directories("coppeliaSim-client/include/stack")
 include_directories("coppeliaSim-client/remoteApi")
-include_directories("C:/Users/bun-i/AppData/Local/Programs/Python/Python38/include/")
+
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 file(GLOB USER_SOURCE "*.cpp")
 add_executable(${PROJECT_NAME} ${USER_SOURCE})
 
 target_link_libraries(${PROJECT_NAME} core)
 target_link_libraries(${PROJECT_NAME} common)
 target_link_libraries(${PROJECT_NAME} coppeliaSim_client)
+target_link_libraries(${PROJECT_NAME} 
+  Python3::Python
+  Python3::Module
+  Python3::NumPy
+)
 

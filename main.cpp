@@ -193,8 +193,7 @@ void Usr_ReadFromSimulation()
 int main(int argc, char *argv[])
 {
     STLReader model;
-    plt::plotTraj(3, 0, 0, 0);
-    plt::show();
+
     //ACS_Base AntColony;
     //ACS AntColony("kroA100.tsp", 2);
     //AntColony.computeSolution();
@@ -211,10 +210,7 @@ int main(int argc, char *argv[])
         std::cout << "Vertex 1:" << list[i].vertex[1].x << ", " << list[i].vertex[1].y << ", " << list[i].vertex[1].z << std::endl;
         std::cout << "Vertex 2:" << list[i].vertex[2].x << ", " << list[i].vertex[2].y << ", " << list[i].vertex[2].z << std::endl;
     }
-    while(1)
-    {
 
-    }
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
     /*
         System Logger tool init.

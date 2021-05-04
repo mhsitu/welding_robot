@@ -14,17 +14,12 @@
 #include <bits/stdc++.h>
 #include <map>
 #include <functional>
+#include "model_grid_map.hpp"
 
 #define INF 0x3f3f3f3f
-#define sqr(x) ((x) * (x))
 #define eps 1e-8
 
-typedef struct Point3i
-{
-    int x;
-    int y;
-    int z;
-} Point3i;
+typedef Point3<int> Point3i;
 
 //任意两点间的信息
 template <class T>
@@ -34,36 +29,6 @@ struct _Inf_of_Points_t
     T pheromone; //信息素
     T herustic;  //启发值
     T info;      //信息值
-};
-
-template <class T>
-struct Vertex3
-{
-    std::vector<Vertex3<T> *> adjacency_nodes;
-    // 邻接的结点
-    Point3i pt;  // 本节点的坐标
-    bool isFree; // 自由点标志
-    int id;      // 结点编号
-
-    int input(FILE *fp, T _x, T _y, T _z)
-    {
-        //暂时令坐标等于下标
-        pt.x = _x;
-        pt.y = _y;
-        pt.z = _z;
-        return fscanf(fp, "%d %d", &id, &isFree);
-    }
-
-    // 计算两顶点间三维曼哈顿距离（Manhattan Distance）
-    static T calMD_3D(const Vertex3<T> &a, const Vertex3<T> &b)
-    {
-        return (a.pt.x - b.pt.x) + (a.pt.y - b.pt.y) + (a.pt.z - b.pt.z);
-    }
-    // 计算两顶点间欧拉距离
-    static T calEUC_3D(const Vertex3<T> &a, const Vertex3<T> &b)
-    {
-        return sqrt(sqr(a.pt.x - b.pt.x) + sqr(a.pt.y - b.pt.y) + sqr(a.pt.z - b.pt.z));
-    }
 };
 
 //快速幂，计算x ^ y，时间复杂度O(logn)
@@ -115,7 +80,7 @@ public:
     }
 };
 
-class ACS_Base
+class ACS_Base :public GridMap<float>
 {
 private:
     int node_num;        // 点数量
@@ -126,63 +91,62 @@ private:
     _Inf_of_Points_t<float> **info_matrix; // 邻接信息矩阵
     int alpha, beta;                       // pheromone, heuristic information的权重
     float rho;                             // pheromone的挥发系数
-    int rangeX, rangeY, rangeZ;            // 所有节点三个坐标的范围，int型且为正数
+    //int rangeX, rangeY, rangeZ;            // 所有节点三个坐标的范围，int型且为正数
     //Point3i start_pt, end_pt;              // 起始点和终点的下标
     //Point3i current_pt, next_pt;           // 当前点和下一点的下标
-    Vertex3<float> *start_node, *end_node; // 起始点和终点的结点
-    //Vertex3<float> *cur, *next;          // 当前结点和下一结点
     Vertex3<float> ***nodes; // 所有结点的体阵cuboid
+    Vertex3<float> *start_node, *end_node; // 起始点和终点的结点
     // 蚁群中每只蚂蚁
     std::vector<Agent<float>> agents;
     // 当前最优蚂蚁
     Agent<float> *best;
 
-    void for_each_nodes(std::function<void(int, int, int)> f)
-    {
-        assert(nodes != NULL);
-        for (int i(0); i < rangeZ; i++)
-        {
-            for (int j(0); j < rangeY; j++)
-            {
-                for (int k(0); k < rangeX; k++)
-                    //对每个结点的操作
-                    f(i, j, k);
-            }
-        }
-    }
+    // void for_each_nodes(std::function<void(int, int, int)> f)
+    // {
+    //     assert(nodes != NULL);
+    //     for (int i(0); i < rangeZ; i++)
+    //     {
+    //         for (int j(0); j < rangeY; j++)
+    //         {
+    //             for (int k(0); k < rangeX; k++)
+    //                 //对每个结点的操作
+    //                 f(i, j, k);
+    //         }
+    //     }
+    // }
 
-    void creat_all_nodes(std::function<void(int, int, int)> f)
-    {
-        assert(nodes == NULL);
-        // 创建结点体阵和初始化
-        nodes = new Vertex3<float> **[rangeZ];
-        for (int i(0); i < rangeZ; i++)
-        {
-            nodes[i] = new Vertex3<float> *[rangeY];
-            for (int j(0); j < rangeY; j++)
-            {
-                nodes[i][i] = new Vertex3<float>[rangeX];
-                for (int k(0); k < rangeX; k++)
-                    //初始化操作
-                    f(i, j, k);
-            }
-        }
-    }
+    // void creat_all_nodes(std::function<void(int, int, int)> f)
+    // {
+    //     assert(nodes != NULL);
+    //     // 创建结点体阵和初始化
+    //     nodes = new Vertex3<float> **[rangeZ];
+    //     for (int i(0); i < rangeZ; i++)
+    //     {
+    //         nodes[i] = new Vertex3<float> *[rangeY];
+    //         for (int j(0); j < rangeY; j++)
+    //         {
+    //             nodes[i][i] = new Vertex3<float>[rangeX];
+    //             for (int k(0); k < rangeX; k++)
+    //                 //初始化操作
+    //                 f(i, j, k);
+    //         }
+    //     }
+    // }
 
-    void delete_all_nodes()
-    {
-        assert(nodes != NULL);
+    // void delete_all_nodes()
+    // {
+    //     assert(nodes != NULL);
 
-        for (int i(0); i < rangeZ; i++)
-        {
-            for (int j(0); j < rangeY; j++)
-            {
-                delete nodes[i][j];
-            }
-            delete nodes[i];
-        }
-        delete nodes;
-    }
+    //     for (int i(0); i < rangeZ; i++)
+    //     {
+    //         for (int j(0); j < rangeY; j++)
+    //         {
+    //             delete nodes[i][j];
+    //         }
+    //         delete nodes[i];
+    //     }
+    //     delete nodes;
+    // }
 
     void initParam()
     {
@@ -195,7 +159,7 @@ private:
         Q = 5;
         index_iteration = 0;
         // 根据障碍信息添加邻接结点
-        for_each_nodes([&](int z, int y, int x) {
+        for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
             // 一个正方体结点六个面
             if (x + 1 < rangeX ? nodes[z][y][x + 1].isFree : false)
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x + 1]);
@@ -220,9 +184,9 @@ private:
         // 创建信息矩阵并初始化
         info_matrix = new _Inf_of_Points_t<float> *[node_num];
         int i = 0, j = 0;
-        for_each_nodes([&](int z, int y, int x) {
+        for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
             info_matrix[i] = new _Inf_of_Points_t<float>[node_num];
-            for_each_nodes([&](int z1, int y1, int x1) {
+            for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z1, int y1, int x1) {
                 info_matrix[i][j].distance = Vertex3<float>::calMD_3D(
                     nodes[z][y][x], nodes[z1][y1][x1]);
                 info_matrix[i][j].pheromone = pheromone_0;
@@ -325,10 +289,11 @@ public:
         }
         //总结点数量,每个维度的范围，参数初始值
         fscanf(fp, "%d %d %d %d", &node_num, &rangeX, &rangeY, &rangeZ);
+
         assert(rangeX & rangeY & rangeZ);
 
         // 创建结点体阵
-        creat_all_nodes([&](int z, int y, int x) {
+        creat_all_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
             nodes[z][y][x].input(fp, z, y, x);
         });
 

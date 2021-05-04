@@ -23,7 +23,7 @@
 ### **运行环境 :**
 
 > 1. 极力推荐使用GCC编译器。如果你使用的是windows平台，请安装MinGW编译器。
-> 2. 具体软件的安装请自行百度。
+> 2. 具体软件的安装请自行搜索。
 
 **Ubuntu 18.04 LTS / Windows 10.0+**
 
@@ -31,8 +31,14 @@
 
 - Python(version 3.0 +)
 
-  用于数据可视化。Python的版本的位数取决于取决于编译器的编译类型。然而在Windows10平台上，推荐安装的MinGW只能编译32位程序，因此Windows10上请安装Python-32bit。
+  Python的位数取决于本项目设置的编译器编译输出类型。然而在Windows10平台上，推荐安装的MinGW只能编译32位程序，因此Windows10上请安装Python-32bit。
 
+- Matplotlib
+
+  用于三维数据可视化的Python库，安装Python后在命令提示符或linux终端中输入完成安装。
+  ```bash
+  $ python -m pip install matplotlib
+  ```
 ### **仿真环境 :**
 
 - Coppeliasim 4.1.1 (推荐版本)

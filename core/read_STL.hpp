@@ -10,32 +10,13 @@
 */
 #ifndef _READ_STL_HPP
 #define _READ_STL_HPP
-#include <windows.h>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
-template <class T>
-class Point3
-{
-public:
-    Point3() : x(0), y(0), z(0) {}
-    Point3(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
-    T x;
-    T y;
-    T z;
-};
-
-template <class T>
-struct Triangles
-{
-public:
-    Point3<T> nor_vec;   // 三角平面的法向量
-    Point3<T> vertex[3]; // 三角形的三个顶点
-    int trait;
-};
+#include "model_grid_map.hpp"
 
 typedef Point3<float> Point3f;
 
@@ -106,12 +87,12 @@ public:
 
     const std::vector<Triangles<float>> &TriangleList()
     {
-        return triangleList;
+        return triangleMesh;
     }
 
 private:
     std::vector<Point3f> pointList;
-    std::vector<Triangles<float>> triangleList;
+    std::vector<Triangles<float>> triangleMesh;
     unsigned int unTriangles;
     char *memwriter;
 
@@ -138,7 +119,7 @@ private:
                 // ss >> useless >> x >> y >> z;
                 // pointList.push_back(Point3f(x, y, z));
             }
-            triangleList.push_back(tri);
+            triangleMesh.push_back(tri);
             unTriangles++;
             getline(ss, useless);
             getline(ss, useless);
@@ -171,7 +152,7 @@ private:
             }
             //p += 2; //跳过尾部标志
             tri.trait = cpyint(p);
-            triangleList.push_back(tri);
+            triangleMesh.push_back(tri);
         }
         return true;
     }

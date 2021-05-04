@@ -2502,33 +2502,36 @@ private:
     PyObject* set_data_fct = nullptr;
 };
 
-
 template <typename T>
 void plotTraj(int dim, T x, T y, T z)
 {
-    static T x2[2] = {0},y2[2] = {0};
-    static std::vector<T> x1,y1,z1;
-    if(dim == 2)
+    static T x2[2] = {0}, y2[2] = {0};
+    static std::vector<T> x1, y1, z1;
+    if (dim == 2)
     {
         x2[0] = x2[1];
         y2[0] = y2[1];
         x2[1] = x;
         y2[1] = y;
 
-        plot(x2,y2,"b-");
+        plot(x2, y2, "b-");
         pause(0.001);
         title("Figure: trajectory");
         legend();
     }
-    else if(dim ==3)
+    else if (dim == 3)
     {
+        std::map<std::string, std::string> keywrd;
+        keywrd.insert(std::pair<std::string, std::string>("linestyle", ":"));
+        keywrd.insert(std::pair<std::string, std::string>("marker", "o"));
+        keywrd.insert(std::pair<std::string, std::string>("linewidth", "5"));
         x1.push_back(x);
         y1.push_back(y);
         z1.push_back(z);
-        plot3(x1, y1, z1, 1);
-        title("Foot trajectory");
+        plot3(x1, y1, z1, 1, keywrd);
+        title("Figure: trajectory");
         pause(0.001);
-        if(x1.size()>650)
+        if (x1.size() > 650)
         {
             cla();
             x1.clear();
