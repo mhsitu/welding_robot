@@ -139,7 +139,6 @@ private:
         Triangles<float> tri;
         for (i = 0; i < unTriangles; i++)
         {
-            //p += 12;                //跳过头部法向量
             tri.nor_vec.x = cpyfloat(p);
             tri.nor_vec.y = cpyfloat(p);
             tri.nor_vec.z = cpyfloat(p);
@@ -150,8 +149,8 @@ private:
                 tri.vertex[j].z = cpyfloat(p);
                 //pointList.push_back(Point3f(cpyfloat(p), cpyfloat(p), cpyfloat(p)));
             }
-            //p += 2; //跳过尾部标志
-            tri.trait = cpyint(p);
+            p += 2; //跳过尾部标志
+
             triangleMesh.push_back(tri);
         }
         return true;

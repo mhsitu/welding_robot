@@ -194,22 +194,35 @@ int main(int argc, char *argv[])
 {
     STLReader model;
 
-    //ACS_Base AntColony;
+    ACS_Base AntColony;
     //ACS AntColony("kroA100.tsp", 2);
     //AntColony.computeSolution();
     //AntColony.initParamFromFile("kroA100.tsp");
     //AntColony.computeSolution();
 
     model.ReadFile("test.stl");
-    const std::vector<Triangles<float>> list = model.TriangleList();
+    const std::vector<Triangles<float>> meshes = model.TriangleList();
 
-    for (int i(0); i < list.size(); i++)
-    {
-        std::cout << "Normal vector:" << list[i].nor_vec.x << ", " << list[i].nor_vec.y << ", " << list[i].nor_vec.z << std::endl;
-        std::cout << "Vertex 0:" << list[i].vertex[0].x << ", " << list[i].vertex[0].y << ", " << list[i].vertex[0].z << std::endl;
-        std::cout << "Vertex 1:" << list[i].vertex[1].x << ", " << list[i].vertex[1].y << ", " << list[i].vertex[1].z << std::endl;
-        std::cout << "Vertex 2:" << list[i].vertex[2].x << ", " << list[i].vertex[2].y << ", " << list[i].vertex[2].z << std::endl;
-    }
+    Vertex3<float> ***grid_map = AntColony.creatGridMap(meshes, 0.1, 5);
+    std::vector<float> x_list, y_list, z_list;
+    int index = 0;
+    for_each_nodes(grid_map, AntColony.rangeX, AntColony.rangeY, AntColony.rangeZ, [&](int z, int y, int x) {
+        if(!grid_map[z][y][x].isFree)
+        {
+            x_list.push_back(grid_map[z][y][x].pt.x);
+            y_list.push_back(grid_map[z][y][x].pt.y);
+            z_list.push_back(grid_map[z][y][x].pt.z);
+        }
+        index++;
+    });
+
+    int sx = x_list.size();
+    int sy = y_list.size();
+    int sz = z_list.size();
+
+    plt::scatter(x_list, y_list, z_list, 1);
+    plt::show();
+    exit(0);
 
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
     /*

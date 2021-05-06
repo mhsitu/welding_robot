@@ -11,11 +11,29 @@
 #ifndef _MODEL_GRID_MAP_HPP
 #define _MODEL_GRID_MAP_HPP
 #include <assert.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdint.h>
 #include <vector>
 #include <functional>
 
 #define sqr(x) ((x) * (x))
-#define my_abs(x) ((x) > 0 ? (x) : ((x) <= 0 ? -(x) : (x)))
+#define my_abs(x) ((x) > 0 ? (x) : -(x))
+//#define is_between(a,b,c) ((b >= a && b <= c) ? true : false)
+
+template<class T>
+bool is_between(T min, T val, T max)
+{
+    return ((val >= min) && (val <= max)) ? true : false;
+}
+
+enum class GRID_PROGRESS
+{
+    READ_MESHES,
+    CREATED_NODES,
+    OPERATING_MESHES,
+    WRITING_FILE
+};
 
 template <class T>
 class Point3
@@ -68,9 +86,9 @@ struct Vertex3
 };
 
 template <class T>
-void creat_all_nodes(T ***matrix, int rx, int ry, int rz, std::function<void(int, int, int)> f)
+void creat_all_nodes(T*** &matrix, int rx, int ry, int rz, std::function<void(int, int, int)> f)
 {
-    assert(matrix != NULL);
+    assert(matrix == NULL);
     // 创建结点体阵和初始化
     matrix = new T **[rz];
     for (int i(0); i < rz; i++)
@@ -78,8 +96,8 @@ void creat_all_nodes(T ***matrix, int rx, int ry, int rz, std::function<void(int
         matrix[i] = new T *[ry];
         for (int j(0); j < ry; j++)
         {
-            matrix[i][i] = new T[rx];
-            for (int k(0); k < rz; k++)
+            matrix[i][j] = new T[rx];
+            for (int k(0); k < rx; k++)
                 //初始化操作
                 f(i, j, k);
         }
@@ -87,7 +105,7 @@ void creat_all_nodes(T ***matrix, int rx, int ry, int rz, std::function<void(int
 }
 
 template <class T>
-void for_each_nodes(T ***matrix, int rx, int ry, int rz, std::function<void(int, int, int)> f)
+void for_each_nodes(T*** &matrix, int rx, int ry, int rz, std::function<void(int, int, int)> f)
 {
     assert(matrix != NULL);
     for (int i(0); i < rz; i++)
@@ -102,7 +120,7 @@ void for_each_nodes(T ***matrix, int rx, int ry, int rz, std::function<void(int,
 }
 
 template <class T>
-void delete_all_nodes(T ***matrix, int rx, int ry, int rz)
+void delete_all_nodes(T*** &matrix, int rx, int ry, int rz)
 {
     assert(matrix != NULL);
 
@@ -128,9 +146,10 @@ public:
      * @param percision 
      * @param wall 
      */
-    Vertex3<float> ***creatGridMap(const std::vector<Triangles<T>> &mesh, T _precision, int _wall)
+    Vertex3<T> ***creatGridMap(const std::vector<Triangles<T>> &mesh, T _precision, int _wall)
     {
-        Vertex3<float> ***grid_map;
+        Vertex3<T> ***grid_map = NULL;
+        // 区域的最值
         T min_x, min_y, min_z;
         T max_x, max_y, max_z;
 
@@ -144,7 +163,6 @@ public:
         max_x = min_x;
         max_y = min_y;
         max_z = min_z;
-
         for_each(mesh.begin(), mesh.end(), [&](auto _it) {
             for (int i(0); i < 3; i++)
             {
@@ -157,57 +175,88 @@ public:
             }
         });
 
+        display_progress(GRID_PROGRESS::READ_MESHES, mesh.size());
         // 创建[0,range]的结点体阵，单位为1，其中range由栅格精度percision决定
-        rangeX = (max_x - min_x) / precision + 1 + 2 * wall;
-        rangeY = (max_y - min_y) / precision + 1 + 2 * wall;
-        rangeZ = (max_z - min_z) / precision + 1 + 2 * wall;
+        // 1是补偿浮点转int的截断精度
+        rangeX = (int)((max_x - min_x) / precision) + 1 + 2 * wall;
+        rangeY = (int)((max_y - min_y) / precision) + 1 + 2 * wall;
+        rangeZ = (int)((max_z - min_z) / precision) + 1 + 2 * wall;
 
         int index = 0;
         creat_all_nodes(grid_map, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
+            grid_map[z][y][x].pt.x = x < wall ? min_x - (wall - x) * precision  : 
+                (x >= (rangeX - wall) ? max_x + (x - rangeX + wall) * precision : min_x + (x - wall) * precision);
+
+            grid_map[z][y][x].pt.y = y < wall ? min_y - (wall - y) * precision : 
+                (y >= (rangeY - wall) ? max_y + (y - rangeY + wall) * precision : min_y + (y - wall) * precision);
+
+            grid_map[z][y][x].pt.z = z < wall ? min_z - (wall - z) * precision :
+                 (z >= (rangeZ - wall) ? max_z + (z - rangeZ + wall) * precision : min_z + (z - wall) * precision);
+
             grid_map[z][y][x].isFree = true;
             grid_map[z][y][x].id = index;
             index++;
         });
-
-        for (int i(wall); i < rangeZ - wall; i ++)
-        {
-            for (int j(wall); i < rangeY - wall; j++)
-            {
-                for (int k(wall); k < rangeX - wall; k++)
-                {
-                    grid_map[i][j][k].pt.x = min_x + k * precision;
-                    grid_map[i][j][k].pt.y = min_y + j * precision;
-                    grid_map[i][j][k].pt.z = min_z + i * precision;
-                }
-            }
-        }
-        for_each_nodes(grid_map, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
-            grid_map[z][y][x].pt.x = x < wall ? min_x - precision : 
-            (x > wall ? max_x + precision : grid_map[z][y][x].pt.x = min_x + x * precision);
-
-            grid_map[z][y][x].pt.y = y < wall ? min_y - precision :
-             (y > wall ? max_y + precision : grid_map[z][y][x].pt.y = min_y + y * precision);
-
-            grid_map[z][y][x].pt.z = z < wall ? min_z - precision :
-             (z > wall ? max_z + precision : grid_map[z][y][x].pt.z = min_z + z * precision);
-        });
+        display_progress(GRID_PROGRESS::CREATED_NODES, index);
 
         // TODO use mesh loop instead.
         // calculate distance from points to triangle plane
+        index = 0;
         for_each(mesh.begin(), mesh.end(), [&](auto _it) {
             T D = -(_it.vertex[0].x * _it.nor_vec.x +
                     _it.vertex[0].y * _it.nor_vec.y +
                     _it.vertex[0].z * _it.nor_vec.z);
-            T min_dis = precision * sqrt(sqr(_it.nor_vec.x) + sqr(_it.nor_vec.y) + sqr(_it.nor_vec.z));
+            // 找到该三角形的三轴坐标范围和对应的下标
+            min_x = _it.vertex[0].x;
+            min_y = _it.vertex[0].y;
+            min_z = _it.vertex[0].z;
+            max_x = min_x;
+            max_y = min_y;
+            max_z = min_z;
+            for (int i(0); i < 3; i++)
+            {
+                max_x = _it.vertex[i].x > max_x ? _it.vertex[i].x : max_x;
+                max_y = _it.vertex[i].y > max_y ? _it.vertex[i].y : max_y;
+                max_z = _it.vertex[i].z > max_z ? _it.vertex[i].z : max_z;
+                min_x = _it.vertex[i].x < min_x ? _it.vertex[i].x : min_x;
+                min_y = _it.vertex[i].y < min_y ? _it.vertex[i].y : min_y;
+                min_z = _it.vertex[i].z < min_z ? _it.vertex[i].z : min_z;
+            }
+            min_x -= precision;
+            min_y -= precision;
+            min_z -= precision;
+            max_x += precision;
+            max_y += precision;
+            max_z += precision;
 
+            // 计算每个结点到该三角形面的距离,可用局部点计算代替全部点计算
             for_each_nodes(grid_map, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
-                if (my_abs(grid_map[z][y][x].pt.x * _it.nor_vec.x +
-                           grid_map[z][y][x].pt.y * _it.nor_vec.y +
-                           grid_map[z][y][x].pt.z * _it.nor_vec.z + D) < min_dis)
-                {
-                    grid_map[z][y][x].isFree = false;
+                T distance = grid_map[z][y][x].pt.x * _it.nor_vec.x +
+                             grid_map[z][y][x].pt.y * _it.nor_vec.y +
+                             grid_map[z][y][x].pt.z * _it.nor_vec.z + D;
+
+                if (my_abs(distance) < precision)
+                {   //判断该点是否在三个顶点范围内
+                    if (min_x <= grid_map[z][y][x].pt.x && grid_map[z][y][x].pt.x <= max_x &&
+                        min_y <= grid_map[z][y][x].pt.y && grid_map[z][y][x].pt.y <= max_y &&
+                        min_z <= grid_map[z][y][x].pt.z && grid_map[z][y][x].pt.z <= max_z)
+                    {
+                        grid_map[z][y][x].isFree = false;
+                    }
                 }
+
+                // std::cout << "Current Point: " << grid_map[z][y][x].pt.x << ","
+                //           << grid_map[z][y][x].pt.y << ","
+                //           << grid_map[z][y][x].pt.z << "  "
+                //           << "Distance: " << distance << " "
+                //           << " Point order = " << min_x << ", "
+                //           << grid_map[z][y][x].pt.x << ", "
+                //           << max_x <<std::endl;
             });
+
+            index++;
+            int progress = (float)index / (float)mesh.size() * 100;
+            display_progress(GRID_PROGRESS::OPERATING_MESHES, progress);
         });
 
         grid_map_list.push_back(grid_map);
@@ -220,6 +269,31 @@ public:
     int rangeX, rangeY, rangeZ;     // 每个维度的大小
 
     std::vector<Vertex3<float> ***> grid_map_list;
+private:
+    void display_progress(GRID_PROGRESS prg, ...)
+    {
+        va_list args;
+
+        /* args point to the first variable parameter */
+        va_start(args, prg);
+
+        switch(prg)
+        {
+            case GRID_PROGRESS::READ_MESHES:
+                printf("[Grid Map] %d triangles is scanned... \n", (int)va_arg(args, int));
+                break;
+            case GRID_PROGRESS::CREATED_NODES:
+                printf("[Grid Map] %d nodes is created... \n", (int)va_arg(args, int));
+                break;
+            case GRID_PROGRESS::OPERATING_MESHES:
+                printf("[Grid Map] Processing each triangles : %d %% \r", (int)va_arg(args, int));
+                break;
+            case GRID_PROGRESS::WRITING_FILE:
+                break;
+        }
+
+        va_end(args);
+    }
 };
 
 #endif

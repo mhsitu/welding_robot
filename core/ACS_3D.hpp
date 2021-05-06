@@ -91,62 +91,12 @@ private:
     _Inf_of_Points_t<float> **info_matrix; // 邻接信息矩阵
     int alpha, beta;                       // pheromone, heuristic information的权重
     float rho;                             // pheromone的挥发系数
-    //int rangeX, rangeY, rangeZ;            // 所有节点三个坐标的范围，int型且为正数
-    //Point3i start_pt, end_pt;              // 起始点和终点的下标
-    //Point3i current_pt, next_pt;           // 当前点和下一点的下标
-    Vertex3<float> ***nodes; // 所有结点的体阵cuboid
+    Vertex3<float> ***nodes;               // 所有结点的体阵cuboid
     Vertex3<float> *start_node, *end_node; // 起始点和终点的结点
     // 蚁群中每只蚂蚁
     std::vector<Agent<float>> agents;
     // 当前最优蚂蚁
     Agent<float> *best;
-
-    // void for_each_nodes(std::function<void(int, int, int)> f)
-    // {
-    //     assert(nodes != NULL);
-    //     for (int i(0); i < rangeZ; i++)
-    //     {
-    //         for (int j(0); j < rangeY; j++)
-    //         {
-    //             for (int k(0); k < rangeX; k++)
-    //                 //对每个结点的操作
-    //                 f(i, j, k);
-    //         }
-    //     }
-    // }
-
-    // void creat_all_nodes(std::function<void(int, int, int)> f)
-    // {
-    //     assert(nodes != NULL);
-    //     // 创建结点体阵和初始化
-    //     nodes = new Vertex3<float> **[rangeZ];
-    //     for (int i(0); i < rangeZ; i++)
-    //     {
-    //         nodes[i] = new Vertex3<float> *[rangeY];
-    //         for (int j(0); j < rangeY; j++)
-    //         {
-    //             nodes[i][i] = new Vertex3<float>[rangeX];
-    //             for (int k(0); k < rangeX; k++)
-    //                 //初始化操作
-    //                 f(i, j, k);
-    //         }
-    //     }
-    // }
-
-    // void delete_all_nodes()
-    // {
-    //     assert(nodes != NULL);
-
-    //     for (int i(0); i < rangeZ; i++)
-    //     {
-    //         for (int j(0); j < rangeY; j++)
-    //         {
-    //             delete nodes[i][j];
-    //         }
-    //         delete nodes[i];
-    //     }
-    //     delete nodes;
-    // }
 
     void initParam()
     {
@@ -276,8 +226,7 @@ private:
 
 public:
     //Read 3D nodes from files
-    bool
-    initParamFromFile(std::string file_name)
+    bool initParamFromFile(std::string file_name)
     { //输入
         printf("Read file: %s and process data type %i \n", file_name.c_str());
         FILE *fp = fopen(file_name.c_str(), "r");
