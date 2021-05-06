@@ -203,25 +203,13 @@ int main(int argc, char *argv[])
     model.ReadFile("test.stl");
     const std::vector<Triangles<float>> meshes = model.TriangleList();
 
-    Vertex3<float> ***grid_map = AntColony.creatGridMap(meshes, 0.1, 5);
-    std::vector<float> x_list, y_list, z_list;
-    int index = 0;
-    for_each_nodes(grid_map, AntColony.rangeX, AntColony.rangeY, AntColony.rangeZ, [&](int z, int y, int x) {
-        if(!grid_map[z][y][x].isFree)
-        {
-            x_list.push_back(grid_map[z][y][x].pt.x);
-            y_list.push_back(grid_map[z][y][x].pt.y);
-            z_list.push_back(grid_map[z][y][x].pt.z);
-        }
-        index++;
-    });
+    AntColony.nodes = AntColony.creatGridMap(meshes, 0.1, 5);
+    AntColony.node_num = AntColony.size_of_map();
+    AntColony.setPoints(Point3f(-1.2,-1.2,0), Point3f(1.2,1.2,2.2));
+    AntColony.initParam();
 
-    int sx = x_list.size();
-    int sy = y_list.size();
-    int sz = z_list.size();
-
-    plt::scatter(x_list, y_list, z_list, 1);
-    plt::show();
+    AntColony.plot_grid_map();
+    AntColony.plot_show_all();
     exit(0);
 
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();

@@ -10,12 +10,14 @@
 */
 #ifndef _MODEL_GRID_MAP_HPP
 #define _MODEL_GRID_MAP_HPP
+#include "matplotlibcpp.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
 #include <vector>
 #include <functional>
+namespace plt = matplotlibcpp;
 
 #define sqr(x) ((x) * (x))
 #define my_abs(x) ((x) > 0 ? (x) : -(x))
@@ -56,22 +58,20 @@ public:
 };
 
 template <class T>
-struct Vertex3
+class Vertex3
 {
-    std::vector<Vertex3<T> *> adjacency_nodes;
-    // 邻接的结点
-    Point3<T> pt;  // 本节点的坐标
+    Point3<T> pt;  // 本顶点的坐标
     bool isFree; // 自由点标志
     int id;      // 结点编号
 
-    int input(FILE *fp, T _z, T _y, T _x)
-    {
-        //暂时令坐标等于下标
-        pt.x = _x;
-        pt.y = _y;
-        pt.z = _z;
-        return fscanf(fp, "%d %d", &id, &isFree);
-    }
+    // int input(FILE *fp, T _z, T _y, T _x)
+    // {
+    //     //暂时令坐标等于下标
+    //     pt.x = _x;
+    //     pt.y = _y;
+    //     pt.z = _z;
+    //     return fscanf(fp, "%d %d", &id, &isFree);
+    // }
 
     // 计算两顶点间三维曼哈顿距离（Manhattan Distance）
     static T calMD_3D(const Vertex3<T> &a, const Vertex3<T> &b)
@@ -197,7 +197,8 @@ public:
             grid_map[z][y][x].id = index;
             index++;
         });
-        display_progress(GRID_PROGRESS::CREATED_NODES, index);
+        map_size = index;
+        display_progress(GRID_PROGRESS::CREATED_NODES, map_size);
 
         // TODO use mesh loop instead.
         // calculate distance from points to triangle plane
@@ -242,16 +243,11 @@ public:
                         min_z <= grid_map[z][y][x].pt.z && grid_map[z][y][x].pt.z <= max_z)
                     {
                         grid_map[z][y][x].isFree = false;
+                        x_list.push_back(grid_map[z][y][x].pt.x);
+                        y_list.push_back(grid_map[z][y][x].pt.y);
+                        z_list.push_back(grid_map[z][y][x].pt.z);
                     }
                 }
-
-                // std::cout << "Current Point: " << grid_map[z][y][x].pt.x << ","
-                //           << grid_map[z][y][x].pt.y << ","
-                //           << grid_map[z][y][x].pt.z << "  "
-                //           << "Distance: " << distance << " "
-                //           << " Point order = " << min_x << ", "
-                //           << grid_map[z][y][x].pt.x << ", "
-                //           << max_x <<std::endl;
             });
 
             index++;
@@ -260,16 +256,36 @@ public:
         });
 
         grid_map_list.push_back(grid_map);
+        
+        display_progress(GRID_PROGRESS::WRITING_FILE);
 
         return grid_map;
+    }
+
+    int size_of_map()
+    {
+        return map_size;
+    }
+
+    void plot_grid_map()
+    {
+        plt::scatter(x_list, y_list, z_list, 1);
+    }
+
+    void plot_show_all()
+    {
+        plt::show();
     }
 
     T precision;                    // 每个栅格代表的实际大小
     T wall;                         // 物体最大轮廓外留出空白圈的厚度
     int rangeX, rangeY, rangeZ;     // 每个维度的大小
 
-    std::vector<Vertex3<float> ***> grid_map_list;
 private:
+    std::vector<Vertex3<float> ***> grid_map_list;
+    std::vector<T> x_list, y_list, z_list;
+    int map_size;
+
     void display_progress(GRID_PROGRESS prg, ...)
     {
         va_list args;
@@ -289,6 +305,7 @@ private:
                 printf("[Grid Map] Processing each triangles : %d %% \r", (int)va_arg(args, int));
                 break;
             case GRID_PROGRESS::WRITING_FILE:
+                printf("[Grid Map] Done! \r\n");
                 break;
         }
 
