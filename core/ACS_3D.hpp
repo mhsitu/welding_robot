@@ -11,12 +11,14 @@
 #ifndef _ACS_3D_HPP
 #define _ACS_3D_HPP
 #include <assert.h>
+#include <time.h>
 #include <bits/stdc++.h>
 #include <map>
 #include <functional>
 #include "model_grid_map.hpp"
 
-#define INF 0x3f3f3f3f
+#define INF_FLOAT (1.0/0.0)
+#define INF_INT 0x3f3f3f3f
 #define eps 1e-8
 
 typedef Point3<int> Point3i;
@@ -25,17 +27,19 @@ typedef Point3<int> Point3i;
 template <class T>
 struct _Inf_of_Points_t
 {
-    T distance;  //距离
-    T pheromone; //信息素
-    //T herustic;  //启发值
-    T info;      //信息值
+    _Inf_of_Points_t(T a, T b, T c):distance(a), pheromone(b), info(c){}
+    T distance;   //距离
+    T pheromone;  //信息素
+    //T herustic; //启发值
+    T info;       //info = pheromone^alpha
 };
 
 template <class T>
 class ACS_Node : public Vertex3<T>
 {
+public:
     std::vector<ACS_Node<T> *> adjacency_nodes;    // 邻接结点
-    std::vector<_Inf_of_Points_t> adjacency_infos; // 邻接结点的信息
+    std::vector<_Inf_of_Points_t<T>> adjacency_infos; // 邻接结点的信息
 };
 
 //快速幂，计算x ^ y，时间复杂度O(logn)
@@ -57,33 +61,40 @@ template <class T>
 class Agent
 {
 private:
-    std::vector<Node<T> *> path; // 路径点
+    std::vector<ACS_Node<T> *> path; // 路径点
+    std::vector<int> node_index;     // 每个路径点的选择 
 
 public:
-    std::set<int> tabu_list; // 禁止列表（已走过结点）
-    T L;                     //路径长度
+    std::set<unsigned long int> tabu_list; // 禁止列表（已走过结点）
+    T L;                     // 路径长度
 
-    void addNextNode(Vertex3<T> *pt, T _dis)
+    void addNextNode(ACS_Node<T> *node, int index, T _dis)
     {
-        tabu_list.insert(pt->id);
-        path.push_back(pt);
+        tabu_list.insert(node->id);
+        path.push_back(node);
+        node_index.push_back(index);
         L += _dis;
     }
 
-    void addStartNode(Vertex3<T> *_start)
+    void addStartNode(ACS_Node<T> *_start)
     {
         tabu_list.insert(_start->id);
         path.push_back(_start);
+        L = 0;
     }
 
     void setDeadEnd()
     {
-        L = INF;
+        L = INF_FLOAT;
     }
 
-    const std::vector<Vertex3<T> *> *getPath() const
+    const std::vector<ACS_Node<T> *> *getPath() const
     {
         return &path;
+    }
+    const std::vector<int> *nodeIndex()const
+    {
+        return &node_index;
     }
 };
 
@@ -91,15 +102,16 @@ class ACS_Base : public GridMap<float>
 {
 private:
     int colony_num;      // 蚁群数量
-    int index_iteration; // 迭代索引
     int max_iteration;   // 最大迭代次数
     float pheromone_0, Q;
-    _Inf_of_Points_t<float> **info_matrix; // 邻接信息矩阵
-    int alpha, beta;                       // pheromone, heuristic information的权重
-    float rho;                             // pheromone的挥发系数
-    std::vector<Agent<float>> agents;      // 蚁群中每只蚂蚁
-    Agent<float> *best;                    // 当前最优蚂蚁
-
+    int alpha, beta;                        // pheromone, heuristic information的权重
+    float rho;                              // pheromone的挥发系数
+    int node_num;                           // 点数量
+    ACS_Node<float> ***nodes;               // 所有结点的体阵cuboid
+    ACS_Node<float> *start_node, *end_node; // 起始点和终点的结点
+    std::vector<Agent<float>> agents;       // 蚁群中每只蚂蚁
+    Agent<float> best;                     // 当前最优蚂蚁
+    std::vector<float> path_x, path_y, path_z;
     /**
     * @brief next nodes of ant K.  
     * @param agentK ant K
@@ -108,28 +120,26 @@ private:
     * @retval true update next point
     * @retval false dead end/bad route or reach end point
     */
-    bool selectNext(Agent<float> &agentK, Vertex3<float> *cur, Vertex3<float> *next)
+    bool selectNext(Agent<float> &agentK, ACS_Node<float>* &cur, ACS_Node<float>* &next)
     {
-        std::vector<Vertex3<float> *> J;
-
-        // 当前点周围被障碍包围
-        if (cur->adjacency_nodes.empty())
-        {
-            agentK.setDeadEnd();
-            return false;
-        }
+        std::vector<int> J;
 
         float prob_sum = 0, total = 0;
         // 查找所有可达点和信息素总和
-        for_each(cur->adjacency_nodes.begin(), cur->adjacency_nodes.end(), [&](auto _it) {
-            // 检查邻近结点是否被这只蚂蚁走过，防止闭环
-            if (agentK.tabu_list.find(cur->id) != agentK.tabu_list.end())
+        for (int i(0); i < 6; i++)
+        {   // 检查邻近结点是否被这只蚂蚁走过，防止闭环
+            int _id = cur->adjacency_nodes[i]->id;
+            auto iter = agentK.tabu_list.find(_id);
+            if (iter == agentK.tabu_list.end())
             {
-                J.push_back(_it);
-                info_matrix[cur->id][_it->id].info = power(info_matrix[cur->id][_it->id].pheromone, alpha);
-                total += info_matrix[cur->id][_it->id].info;
+                if (cur->adjacency_nodes[i] != cur && cur->adjacency_nodes[i]->isFree)
+                {
+                    J.push_back(i);
+                    cur->adjacency_infos[i].info = power(cur->adjacency_infos[i].pheromone, alpha);
+                    total += cur->adjacency_infos[i].info;
+                }
             }
-        });
+        }
 
         // 没有可达点，本路径到尽头
         if (J.empty())
@@ -142,18 +152,22 @@ private:
         float rnd = (float)(rand()) / (float)RAND_MAX;
         rnd *= total;
 
-        for (int i = 0, s = J.size(); i < s; i++)
+        for (int i(5); i >= 0; i--)
         {
-            prob_sum += info_matrix[cur->id][J[i]->id].info;
-            if (prob_sum >= rnd)
+            if(i == J.back())
             {
-                next = J[i];
-                agentK.addNextNode(J[i], info_matrix[cur->id][J[i]->id].distance);
-                // 到终点
-                if (next == end_node)
-                    return false;
-                else
-                    return true;
+                J.pop_back();
+                prob_sum += cur->adjacency_infos[i].info;
+                if (prob_sum >= rnd)
+                {
+                    next = cur->adjacency_nodes[i];
+                    agentK.addNextNode(next, i, cur->adjacency_infos[i].distance);
+                    if (next != end_node)
+                        return true;
+                    // 到终点
+                    else
+                        return false;
+                }
             }
         }
 
@@ -161,136 +175,130 @@ private:
         return false;
     }
 
+    /*
+        更新第K只蚂蚁在路径上留下的信息素
+    */
     void update_pheromone(Agent<float> &agentK)
     {
-        const std::vector<Vertex3<float> *> *path = agentK.getPath();
+        const std::vector<ACS_Node<float> *> *path = agentK.getPath();
+        const std::vector<int> *next_select = agentK.nodeIndex();
 
         int _size = path->size();
 
         for (int i(0); i < _size - 1; i++)
         {
-            // 对称矩阵
-            info_matrix[(*path)[i]->id][(*path)[i + 1]->id].info += Q / agentK.L;
-            info_matrix[(*path)[i + 1]->id][(*path)[i]->id].info = info_matrix[(*path)[i]->id][(*path)[i + 1]->id].info;
+            (*path)[i]->adjacency_infos[(*next_select)[i]].pheromone += Q / agentK.L;
+            // 无向图
+            // if( next_select[i] < 3 )
+            //     (*path)[i + 1]->adjacency_infos[next_select[i] + 3].pheromone += Q / agentK.L;
+            // else
+            //     (*path)[i + 1]->adjacency_infos[next_select[i] - 3].pheromone += Q / agentK.L;
         }
     }
 
 public:
-    int node_num;                          // 点数量
-    Vertex3<float> ***nodes;               // 所有结点的体阵cuboid
-    Vertex3<float> *start_node, *end_node; // 起始点和终点的结点
-    //Read 3D nodes from files
-    // bool initParamFromFile(std::string file_name)
-    // { //输入
-    //     printf("Read file: %s and process data type %i \n", file_name.c_str());
-    //     FILE *fp = fopen(file_name.c_str(), "r");
+    ACS_Base(){
+        nodes = NULL;
+    } 
 
-    //     if (fp == NULL)
-    //     {
-    //         std::cout << "Failed to read file, reject to init." << std::endl;
-    //         return false;
-    //     }
-    //     //总结点数量,每个维度的范围，参数初始值
-    //     fscanf(fp, "%d %d %d %d", &node_num, &rangeX, &rangeY, &rangeZ);
-
-    //     assert(rangeX & rangeY & rangeZ);
-
-    //     // 创建结点体阵
-    //     creat_all_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
-    //         nodes[z][y][x].input(fp, z, y, x);
-    //     });
-
-    //     // 初始化所有参数
-    //     initParam();
-
-    //     fclose(fp);
-    //     return true;
-    // }
-
-    void initParam()
+    void initFromGridMap()
     {
         alpha = 1;
         beta = 11;
         rho = 0.9;
-        max_iteration = 50;
-        colony_num = 50;
         pheromone_0 = 0.5;
         Q = 5;
-        index_iteration = 0;
+        max_iteration = 130;
+        colony_num = 160;
+        node_num = size_of_map();
+        srand(time(0));
+
+        Vertex3<float> ***map = ptr_grid_map();
+
+        if(nodes != NULL)
+            delete_all_nodes(nodes, rangeX, rangeY, rangeZ);
+
+        creat_all_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
+            nodes[z][y][x].pt = map[z][y][x].pt;
+            nodes[z][y][x].id = map[z][y][x].id;
+            nodes[z][y][x].isFree = map[z][y][x].isFree;
+        });
+
         // 根据几何属性,按顺序推入邻接结点，超出边界的结点位置推入自己
         for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
             /* 
                 1. 一个正方体结点六个面,以x,y,z下标正向为自身坐标的参考正向
                 2. 沿x,y,z正向方向邻接结点下标分别为1,2,3
                 3. 对应负向结点下标为4,5,6, 那么i和i+3就是一对相对的面
+                4. 初始化信息素, 由于是相邻点，点间距离都设为1, herustic = 1 / (info_matrix[i][j].distance + eps);
             */
-            if(x + 1 > rangeX)//1
+            if(x + 1 >= rangeX)//1
+            {
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0,0,0));
+            }
             else
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x+1]);
+            {
+                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x + 1]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(1, pheromone_0, 0));
+            }
 
-            if(y + 1 > rangeY)//2
+            if (y + 1 >= rangeY) //2
+            {
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
+            }
             else
+            {
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y+1][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(1, pheromone_0, 0));
+            }
 
-            if (z + 1 > rangeZ) //3
+            if (z + 1 >= rangeZ) //3
+            {
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
+            }
             else
+            {
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z+1][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(1, pheromone_0, 0));
+            }
 
             if (x - 1 < 0) //4
+            {
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
+            }
             else
+            {    
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x-1]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(1, pheromone_0, 0));
+            }
 
             if (y - 1 < 0) //5
+            {    
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
+            }
             else
+            {    
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y-1][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(1, pheromone_0, 0));
+            }
 
             if (z - 1 < 0) //6
+            {    
                 nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
+            }
             else
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z-1][y][x]);
-                
-            // if (x + 1 < rangeX ? nodes[z][y][x + 1].isFree : false)
-            //     nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x + 1]);
-
-            // if (y + 1 < rangeY ? nodes[z][y + 1][x].isFree : false)
-            //     nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y + 1][x]);
-
-            // if (z + 1 < rangeZ ? nodes[z + 1][y][x].isFree : false)
-            //     nodes[z][y][x].adjacency_nodes.push_back(&nodes[z + 1][y][x]);
-
-            // if (x - 1 >= 0 ? nodes[z][y][x - 1].isFree : false)
-            //     nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x - 1]);
-
-            // if (y - 1 >= 0 ? nodes[z][y - 1][x].isFree : false)
-            //     nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y - 1][x]);
-
-            // if (z - 1 >= 0 ? nodes[z - 1][y][x].isFree : false)
-            //     nodes[z][y][x].adjacency_nodes.push_back(&nodes[z - 1][y][x]);
+            {
+                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z - 1][y][x]);
+                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(1, pheromone_0, 0));
+            }
         });
-
-        // 创建信息矩阵并初始化
-        info_matrix = new _Inf_of_Points_t<float> *[node_num];
-        int i = 0, j = 0;
-        for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
-            info_matrix[i] = new _Inf_of_Points_t<float>[node_num];
-            for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z1, int y1, int x1) {
-                info_matrix[i][j].distance = Vertex3<float>::calMD_3D(
-                    nodes[z][y][x], nodes[z1][y1][x1]);
-                info_matrix[i][j].pheromone = pheromone_0;
-                // 这里由于所有可达点都是邻接点，两点间距离是一样的，启发值也一样了
-                // 后面的概率公式可以约去这个常数
-                //info_matrix[i][j].herustic = 1 / (info_matrix[i][j].distance + eps);
-                j++;
-            });
-            j = 0;
-            i++;
-            printf("Round: %d \r", i);
-        });
+        printf("[ACS 3D] Created %d nodes, node cubiod [x: %d, y: %d, z: %d]\r\n", size_of_map(),rangeX, rangeY, rangeZ);
     }
 
     /*
@@ -298,20 +306,26 @@ public:
     */
     void computeSolution()
     {
-        Vertex3<float> *cur, *next;
+        ACS_Node<float> *cur, *next;
 
-        // 产出蚂蚁，初始化最优蚂蚁
+        // 初始化蚂蚁和最短距离
         agents.resize(colony_num);
-        best = &agents[0];
+        best = agents[0];
+        best.L = INF_FLOAT;
 
         for (int i(0); i < max_iteration; i++)
         {
+            printf("[ACS 3D] Computing iteration: %d | Total Progress: %d %% \r", i+1,
+                     (int)((float)(i+1) / (float)max_iteration * 100));
+
             //信息素挥发
-            for (int i = 0; i < node_num; i++)
-                for (int j = 0; j < node_num; j++)
-                    info_matrix[i][j].pheromone *= rho;
+            for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
+                for (int i(0); i < 6; i++)
+                    nodes[z][y][x].adjacency_infos[i].pheromone *= rho;
+            });
 
             for_each(agents.begin(), agents.end(), [&](auto agentK) {
+                agentK.addStartNode(start_node);
                 cur = start_node;
                 // 搜索路径
                 while (selectNext(agentK, cur, next))
@@ -319,8 +333,9 @@ public:
                     cur = next;
                 }
                 // 更新最优解
-                if (agentK.L < best->L)
-                    best = &agentK;
+                if (agentK.L < best.L)
+                    best = agentK;
+
                 // 更新留下的信息素
                 update_pheromone(agentK);
             });
@@ -329,6 +344,15 @@ public:
             agents.clear();
             agents.resize(colony_num);
         }
+
+        const std::vector<ACS_Node<float> *> *path = best.getPath();
+        printf("Best Path: ");
+        for_each(path->begin(), path->end(), [&](auto _it) {
+            path_x.push_back(_it->pt.x);
+            path_y.push_back(_it->pt.y);
+            path_z.push_back(_it->pt.z);
+            printf("%d -> ", _it->id);
+        });
     }
 
     void setPoints(Point3<float> start, Point3<float> end)
@@ -349,6 +373,14 @@ public:
                 end_node = &nodes[z][y][x];
             }
         });
+    }
+
+    void plot_path()
+    {
+        std::map<std::string, std::string> keywords;
+        keywords.insert(std::pair<std::string, std::string>("c", "grey"));
+        keywords.insert(std::pair<std::string, std::string>("linewidth", "2"));
+        plt::plot3(path_x, path_y, path_z, keywords);
     }
 };
 

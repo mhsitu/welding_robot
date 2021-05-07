@@ -192,24 +192,26 @@ void Usr_ReadFromSimulation()
 */
 int main(int argc, char *argv[])
 {
+    //读取工件模型
     STLReader model;
-
-    ACS_Base AntColony;
-    //ACS AntColony("kroA100.tsp", 2);
-    //AntColony.computeSolution();
-    //AntColony.initParamFromFile("kroA100.tsp");
-    //AntColony.computeSolution();
-
     model.ReadFile("test.stl");
     const std::vector<Triangles<float>> meshes = model.TriangleList();
 
-    AntColony.nodes = AntColony.creatGridMap(meshes, 0.1, 5);
-    AntColony.node_num = AntColony.size_of_map();
-    AntColony.setPoints(Point3f(-1.2,-1.2,0), Point3f(1.2,1.2,2.2));
-    AntColony.initParam();
+    //创建栅格地图
+    ACS_Base AntColony;
+    AntColony.creatGridMap(meshes, 0.1, 5);
 
+    // 蚁群搜索无碰撞路径
+    AntColony.initFromGridMap();
+    AntColony.setPoints(Point3f(-1.2, -1.2, 0), Point3f(1.2, 1.2, 2.2));
+    //AntColony.setPoints(Point3f(2.36, 0.19, 0.8), Point3f(3.2, -0.2, 0.9));
+    AntColony.computeSolution();
+
+    // 结果可视化
+    AntColony.plot_path();
     AntColony.plot_grid_map();
-    AntColony.plot_show_all();
+    AntColony.show_plot();
+    AntColony.show_plot();
     exit(0);
 
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();

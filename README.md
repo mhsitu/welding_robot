@@ -119,5 +119,9 @@ bool ComWithSevrer()
 
   ![](img/straight_line2.gif)
 
+- 三维路径搜索
+
+  ![](img/ACS_3D.gif)
+  
 ## **参考文献**
   1. X. Wang, L. Xue, Y. Yan, and X. Gu, “Welding robot collision-free path optimization,” Appl. Sci., vol. 7, no. 2, 2017, doi: 10.3390/app7020089.

@@ -21,13 +21,6 @@ namespace plt = matplotlibcpp;
 
 #define sqr(x) ((x) * (x))
 #define my_abs(x) ((x) > 0 ? (x) : -(x))
-//#define is_between(a,b,c) ((b >= a && b <= c) ? true : false)
-
-template<class T>
-bool is_between(T min, T val, T max)
-{
-    return ((val >= min) && (val <= max)) ? true : false;
-}
 
 enum class GRID_PROGRESS
 {
@@ -60,18 +53,10 @@ public:
 template <class T>
 class Vertex3
 {
+public:
     Point3<T> pt;  // 本顶点的坐标
     bool isFree; // 自由点标志
-    int id;      // 结点编号
-
-    // int input(FILE *fp, T _z, T _y, T _x)
-    // {
-    //     //暂时令坐标等于下标
-    //     pt.x = _x;
-    //     pt.y = _y;
-    //     pt.z = _z;
-    //     return fscanf(fp, "%d %d", &id, &isFree);
-    // }
+    unsigned long int id;      // 结点编号
 
     // 计算两顶点间三维曼哈顿距离（Manhattan Distance）
     static T calMD_3D(const Vertex3<T> &a, const Vertex3<T> &b)
@@ -148,7 +133,9 @@ public:
      */
     Vertex3<T> ***creatGridMap(const std::vector<Triangles<T>> &mesh, T _precision, int _wall)
     {
-        Vertex3<T> ***grid_map = NULL;
+        if(grid_map != NULL)
+            delete_all_nodes(grid_map, rangeX, rangeY, rangeZ);
+
         // 区域的最值
         T min_x, min_y, min_z;
         T max_x, max_y, max_z;
@@ -252,13 +239,16 @@ public:
 
             index++;
             int progress = (float)index / (float)mesh.size() * 100;
-            display_progress(GRID_PROGRESS::OPERATING_MESHES, progress);
+            display_progress(GRID_PROGRESS::OPERATING_MESHES, progress, index);
         });
-
-        grid_map_list.push_back(grid_map);
         
         display_progress(GRID_PROGRESS::WRITING_FILE);
 
+        return grid_map;
+    }
+
+    Vertex3<T> ***ptr_grid_map() const
+    {
         return grid_map;
     }
 
@@ -269,10 +259,12 @@ public:
 
     void plot_grid_map()
     {
-        plt::scatter(x_list, y_list, z_list, 1);
+        std::map<std::string, std::string> keywords;
+        keywords.insert(std::pair<std::string, std::string>("marker", "o"));
+        plt::scatter(x_list, y_list, z_list, 1, keywords);
     }
 
-    void plot_show_all()
+    void show_plot()
     {
         plt::show();
     }
@@ -282,7 +274,7 @@ public:
     int rangeX, rangeY, rangeZ;     // 每个维度的大小
 
 private:
-    std::vector<Vertex3<float> ***> grid_map_list;
+    Vertex3<float> ***grid_map = NULL;
     std::vector<T> x_list, y_list, z_list;
     int map_size;
 
@@ -302,10 +294,10 @@ private:
                 printf("[Grid Map] %d nodes is created... \n", (int)va_arg(args, int));
                 break;
             case GRID_PROGRESS::OPERATING_MESHES:
-                printf("[Grid Map] Processing each triangles : %d %% \r", (int)va_arg(args, int));
+                printf("[Grid Map] Processing triangle: %d , Total Progress: %d %% \r", (int)va_arg(args, int), (int) va_arg(args, int));
                 break;
             case GRID_PROGRESS::WRITING_FILE:
-                printf("[Grid Map] Done! \r\n");
+                printf("\n[Grid Map] Done! \r\n");
                 break;
         }
 
