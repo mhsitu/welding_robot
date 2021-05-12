@@ -5,9 +5,9 @@
 #include "sys_log.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
-#include "core/ACS_3D.hpp"
+#include "core/ASRank_3D.hpp"
 #include "core/read_STL.hpp"
-#include "core/ACS.hpp"
+#include "core/ACS_GTSP.hpp"
 
 /* Usr defines ---------------------------------------------------------------*/
 using namespace std;
@@ -197,21 +197,17 @@ int main(int argc, char *argv[])
     model.ReadFile("test.stl");
     const std::vector<Triangles<float>> meshes = model.TriangleList();
 
-    //创建栅格地图
-    ACS_Base AntColony;
-    AntColony.creatGridMap(meshes, 0.1, 5);
-
-    // 蚁群搜索无碰撞路径
-    AntColony.initFromGridMap();
-    AntColony.setPoints(Point3f(-1.2, -1.2, 0), Point3f(1.2, 1.2, 2.2));
-    //AntColony.setPoints(Point3f(2.36, 0.19, 0.8), Point3f(3.2, -0.2, 0.9));
-    AntColony.computeSolution();
-
+    // //搜索路径
+    AS_Rank SearchPath;
+    SearchPath.creatGridMap(meshes, 0.1, 5);
+    SearchPath.initFromGridMap();
+    SearchPath.searchBestPathOfPoints("weld_points.in");
+    ACS_GTSP GlobalRoute;
+    GlobalRoute.readFromGraphFile("graph.in");
     // 结果可视化
-    AntColony.plot_path();
-    AntColony.plot_grid_map();
-    AntColony.show_plot();
-    AntColony.show_plot();
+    SearchPath.plot_path();
+    SearchPath.plot_grid_map();
+    SearchPath.show_plot();
     exit(0);
 
     CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();

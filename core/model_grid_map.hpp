@@ -39,6 +39,33 @@ public:
     T x;
     T y;
     T z;
+    Point3<T> operator+(const Point3<T> &b)
+    {
+        return Point3<T>(this->x + b.x, this->y + b.y, this->z + b.z);
+    }
+    Point3<T> operator-(const Point3<T> &b)
+    {
+        return Point3<T>(this->x - b.x, this->y - b.y, this->z - b.z);
+    }
+    T norm()
+    {
+        return sqrt(sqr(x) + sqr(y) + sqr(z));
+    }
+    // 计算两顶点间三维曼哈顿距离（Manhattan Distance）
+    static T manhattan_distance(const Point3<T> &a, const Point3<T> &b)
+    {
+        return (a.x - b.x) + (a.y - b.y) + (a.z - b.z);
+    }
+    // 计算两顶点间欧拉距离，向量模长
+    static T euler_distance(const Point3<T> &a, const Point3<T> &b)
+    {
+        return sqrt(sqr(a.x - b.x) + sqr(a.y - b.y) + sqr(a.z - b.z));
+    }
+    // 计算A,B向量的点积
+    static T dot(const Point3<T> &a, const Point3<T> &b)
+    {
+        return (a.x * b.x + b.y * b.y + a.z * b.z);
+    }
 };
 
 template <class T>
@@ -57,17 +84,6 @@ public:
     Point3<T> pt;  // 本顶点的坐标
     bool isFree; // 自由点标志
     unsigned long int id;      // 结点编号
-
-    // 计算两顶点间三维曼哈顿距离（Manhattan Distance）
-    static T calMD_3D(const Vertex3<T> &a, const Vertex3<T> &b)
-    {
-        return (a.pt.x - b.pt.x) + (a.pt.y - b.pt.y) + (a.pt.z - b.pt.z);
-    }
-    // 计算两顶点间欧拉距离
-    static T calEUC_3D(const Vertex3<T> &a, const Vertex3<T> &b)
-    {
-        return sqrt(sqr(a.pt.x - b.pt.x) + sqr(a.pt.y - b.pt.y) + sqr(a.pt.z - b.pt.z));
-    }
 };
 
 template <class T>
@@ -261,7 +277,7 @@ public:
     {
         std::map<std::string, std::string> keywords;
         keywords.insert(std::pair<std::string, std::string>("marker", "o"));
-        plt::scatter(x_list, y_list, z_list, 1, keywords);
+        plt::scatter(x_list, y_list, z_list, 1, keywords,0);
     }
 
     void show_plot()
