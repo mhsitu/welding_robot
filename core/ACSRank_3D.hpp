@@ -121,7 +121,7 @@ private:
     std::vector<Agent<float>> agents;       // 蚁群中每只蚂蚁
     Agent<float> best;                      // 当前最优蚂蚁
     std::vector<float> path_x, path_y, path_z;
-
+    std::vector<Point3<float>> route_points;
     /**
     * @brief next nodes of ant K.  
     * @param agentK ant K
@@ -222,6 +222,9 @@ private:
         int local_min = 0;
 
         // 初始化蚂蚁和最短距离
+        path_x.clear();
+        path_y.clear();
+        path_z.clear();
         best.L = INF_FLOAT;
         last_path = INF_FLOAT;
 
@@ -233,9 +236,9 @@ private:
             // 每次迭代都更改Q为当前最佳路径的x倍，x才是真正意义上的Q，但此时Q与路径长度无关
             // x / L为每次蚂蚁走过后期望增加的信息素总值，这个值应与信息素初值接近
             // 蚂蚁数量约为搜索总步数的1/2~1/3
-            colony_num = 0.33 * (best.L < predict_path_len ?  best.L : predict_path_len) / precision;
+            colony_num = 0.35 * (best.L < predict_path_len ?  best.L : predict_path_len) / precision;
             lambda = 0.2 * colony_num;
-            Q = pheromone_0 / lambda * (best.L < predict_path_len ?  best.L : predict_path_len);
+            Q = pheromone_0 / lambda * (best.L == INF_FLOAT ? predict_path_len : best.L);
             agents.resize(colony_num);
 
             printf("[ACS 3D] Computing iteration: %d | Total Progress: %d %% \r", i + 1,
@@ -274,29 +277,13 @@ private:
 
             _path_index.push_back(i);
             _path_lens.push_back(best.L);
-            // if(last_path == best.L)
-            //     local_min++;
-            // else
-            //     local_min = 0;
-
-            // if(local_min == 20 && colony_num < 500)
-            // {   //进入局部最优
-            //     local_min = 0;
-            //     colony_num *= 1.0;
-            // }
             last_path = best.L;
-            printf("Path length: %.4f, colony num %d \n", _path_lens[i], colony_num);
+            //printf("Path length: %.4f, colony num %d \n", _path_lens[i], colony_num);
         }
-        plt::plot(_path_index, _path_lens, "b-");
-        plt::show();
-
-        const std::vector<ACS_Node<float> *> *path = best.getPath();
-        for_each(path->begin(), path->end(), [&](auto _it)
-        {
-            path_x.push_back(_it->pt.x);
-            path_y.push_back(_it->pt.y);
-            path_z.push_back(_it->pt.z);
-        });
+        // plt::plot(_path_index, _path_lens, "b-");
+        // plot_grid_map();
+        // plot_path(best);
+        // show_plot();
     }
 
     void reset()
@@ -317,9 +304,9 @@ public:
     void initFromGridMap()
     {
         alpha = 1;
-        beta = 5;
+        beta = 3;
         rho = 0.8;
-        max_iteration = 250;// 自动收敛
+        max_iteration = 150;// 自动收敛
         colony_num = 60;    // 根据路径长度自适应
 
         pheromone_0 = 1;
@@ -421,16 +408,16 @@ public:
     void searchBestPathOfPoints(std::string file_name = "", float predict_path_len = 10)
     {
         int point_num = 0;
-        std::vector<Point3<float>> points;
+
         if(file_name == "")
         {
             std::cout << "[ACS 3D] Please enter passing point number: ";
             std::cin >> point_num;
-            points.resize(point_num);
+            route_points.resize(point_num);
             std::cout << "[ACS 3D] Please enter passing point in order: " << std::endl;
             for (int i = 0; i < point_num; i++)
             {
-                std::cin >> points[i].x >> points[i].y >> points[i].z;
+                std::cin >> route_points[i].x >> route_points[i].y >> route_points[i].z;
             }
         }
         else
@@ -442,10 +429,10 @@ public:
                 return;
             }
             fscanf(fp, "%d", &point_num);
-            points.resize(point_num);
+            route_points.resize(point_num);
             for(int i = 0; i < point_num; i++)
             {
-                fscanf(fp, "%f %f %f", &points[i].x, &points[i].y, &points[i].z);
+                fscanf(fp, "%f %f %f", &route_points[i].x, &route_points[i].y, &route_points[i].z);
             }
             fclose(fp);
         }
@@ -458,7 +445,7 @@ public:
         {
             for(int j = i+1; j < point_num;j++)
             {
-                if (setPoints(points[i], points[j]))
+                if (setPoints(route_points[i], route_points[j]))
                 {
                     //SearchRoute.setPoints(Point3f(-1.2, -1.2, 0), Point3f(1.2, 1.2, 2.2));
                     //SearchRoute.setPoints(Point3f(2.36, 0, 0.9), Point3f(3.2, -0.2, 0.9));
@@ -466,8 +453,8 @@ public:
                     reset();
 
                     printf("[ACS 3D] <Point (%.3f, %.3f, %.3f) : Point (%.3f, %.3f, %.3f)> Path length: %.3f\r\n", 
-                            points[i].x, points[i].y, points[i].z,
-                            points[j].x, points[j].y, points[j].z,
+                            route_points[i].x, route_points[i].y, route_points[i].z,
+                            route_points[j].x, route_points[j].y, route_points[j].z,
                             best.L);
                     fprintf(fp, "%.3f\n", best.L);
                     dis_num++;
@@ -475,8 +462,8 @@ public:
                 else
                 {
                     printf("[ACS 3D] Wrong point : (%.3f, %.3f, %.3f) or (%.3f, %.3f, %.3f), program will exit immediately \r\n",
-                            points[i].x, points[i].y, points[i].z,
-                            points[j].x, points[j].y, points[j].z);
+                            route_points[i].x, route_points[i].y, route_points[i].z,
+                            route_points[j].x, route_points[j].y, route_points[j].z);
                     return;
                 }
             }
@@ -495,6 +482,8 @@ public:
     bool setPoints(Point3<float> &start, Point3<float> &end)
     {
         int findx = 0;
+        start_node = NULL;
+        end_node = NULL;
         for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x)
         {
             float t =  precision;
@@ -517,15 +506,40 @@ public:
             }
         });
 
-        return (findx >= 2) ? true : false;
+        return (findx >= 2 && start_node != NULL && end_node != NULL) ? true : false;
     }
 
-    void plot_path()
+    void plot_path(Agent<float> &agentK, int figureNumber)
+    {
+        const std::vector<ACS_Node<float> *> *path = agentK.getPath();
+        for_each(path->begin(), path->end(), [&](auto _it)
+        {
+            path_x.push_back(_it->pt.x);
+            path_y.push_back(_it->pt.y);
+            path_z.push_back(_it->pt.z);
+        });
+
+        std::map<std::string, std::string> keywords;
+        keywords.insert(std::pair<std::string, std::string>("c", "black"));
+        //keywords.insert(std::pair<std::string, std::string>("marker", "o"));
+        keywords.insert(std::pair<std::string, std::string>("linewidth", "2"));
+        //plt::scatter(path_x, path_y, path_z, 1, keywords,2);
+        plt::plot3(path_x, path_y, path_z, keywords,figureNumber);
+    }
+
+    void plot_route_point(int figureNumber)
     {
         std::map<std::string, std::string> keywords;
-        keywords.insert(std::pair<std::string, std::string>("c", "grey"));
-        keywords.insert(std::pair<std::string, std::string>("linewidth", "2"));
-        plt::plot3(path_x, path_y, path_z, keywords,0);
+        keywords.insert(std::pair<std::string, std::string>("c", "red"));
+        keywords.insert(std::pair<std::string, std::string>("marker", "o"));
+        
+        for_each(route_points.begin(), route_points.end(), [&](auto _it)
+        {
+            path_x.push_back(_it.x);
+            path_y.push_back(_it.y);
+            path_z.push_back(_it.z);
+        });
+        plt::scatter(path_x, path_y, path_z, 3, keywords,figureNumber);
     }
 };
 

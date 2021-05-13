@@ -273,16 +273,17 @@ public:
         return map_size;
     }
 
-    void plot_grid_map()
+    void plot_grid_map(int figureNumber)
     {
         std::map<std::string, std::string> keywords;
         keywords.insert(std::pair<std::string, std::string>("marker", "o"));
-        plt::scatter(x_list, y_list, z_list, 1, keywords,0);
+        plt::scatter(x_list, y_list, z_list, 1, keywords,figureNumber);
     }
 
     void show_plot()
     {
         plt::show();
+        plt::cla();
     }
 
     T precision;                    // 每个栅格代表的实际大小

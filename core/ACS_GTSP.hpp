@@ -81,9 +81,9 @@ typedef struct ACS_Tour
         int sz = path.size();
         for (int i = 0; i < sz; i++)
         {
-            fprintf(fp, "%d->", path[i].first + 1);
+            printf("%d->", path[i].first + 1);
         }
-        fprintf(fp, "%d\n", path[sz - 1].second + 1);
+        printf("%d\n", path[sz - 1].second + 1);
     }
 
     bool operator<(const ACS_Tour &a) const
@@ -248,6 +248,7 @@ private:
         best.clean();
         index_itera = 0;
         MAX_itera = city_num * city_num;
+        init_flag = true;
     }
 
 public:
@@ -337,11 +338,13 @@ public:
             {
                 fscanf(fp, "%lf", &dis[i][j]);
                 dis[j][i] = dis[i][j];  //无向图为对称矩阵
+                printf("distance: %lf \r\n", dis[i][j]);
                 tmp += dis[i][j];       // i == j的时候 dis不存在，所以不考虑。
             }
         }
         pheromone_0 = (double)cnt / (tmp * city_num);
         fclose(fp);
+        init_param();
         return true;
     }
 

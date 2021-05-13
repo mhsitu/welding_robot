@@ -199,14 +199,15 @@ int main(int argc, char *argv[])
 
     // //搜索路径
     ACS_Rank SearchPath;
-    SearchPath.creatGridMap(meshes, 0.05, 10);
+    SearchPath.creatGridMap(meshes, 0.1, 5);
     SearchPath.initFromGridMap();
     SearchPath.searchBestPathOfPoints("weld_points.in", 10);
     ACS_GTSP GlobalRoute;
     GlobalRoute.readFromGraphFile("graph.in");
+    GlobalRoute.computeSolution();
     // 结果可视化
-    SearchPath.plot_path();
-    SearchPath.plot_grid_map();
+    SearchPath.plot_route_point(1);
+    SearchPath.plot_grid_map(1);
     SearchPath.show_plot();
     exit(0);
 
