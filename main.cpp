@@ -5,7 +5,7 @@
 #include "sys_log.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
-#include "core/ASRank_3D.hpp"
+#include "core/ACSRank_3D.hpp"
 #include "core/read_STL.hpp"
 #include "core/ACS_GTSP.hpp"
 
@@ -198,10 +198,10 @@ int main(int argc, char *argv[])
     const std::vector<Triangles<float>> meshes = model.TriangleList();
 
     // //搜索路径
-    AS_Rank SearchPath;
-    SearchPath.creatGridMap(meshes, 0.1, 5);
+    ACS_Rank SearchPath;
+    SearchPath.creatGridMap(meshes, 0.05, 10);
     SearchPath.initFromGridMap();
-    SearchPath.searchBestPathOfPoints("weld_points.in");
+    SearchPath.searchBestPathOfPoints("weld_points.in", 10);
     ACS_GTSP GlobalRoute;
     GlobalRoute.readFromGraphFile("graph.in");
     // 结果可视化

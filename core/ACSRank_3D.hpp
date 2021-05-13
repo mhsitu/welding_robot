@@ -1,11 +1,12 @@
 /**
   ******************************************************************************
-  * @file    ACS_3D.hpp
+  * @file    ACSRank_3D.hpp
   * @brief   Using Ant Colony System to search a path in 3D grid-based map.
   * @author  Stuart(South China University of Technology)
   *          1356046979@qq.com
   * @date    18/04/2021
   * @version 0.1
+  * TODO 使用预搜索路径长度代替无穷大
   ******************************************************************************
 */
 #ifndef _ACS_3D_HPP
@@ -17,7 +18,7 @@
 #include <functional>
 #include "model_grid_map.hpp"
 
-#define INF_FLOAT (1.0 / 0.0)
+#define INF_FLOAT (1.0/0.0)
 #define INF_INT 0x3f3f3f3f
 #define eps 1e-8
 
@@ -96,16 +97,24 @@ public:
     {
         return &node_index;
     }
+    bool findPathNode(ACS_Node<T> *target)
+    {
+        for(auto node:path)
+        {
+            if(target == node) return true;
+        }
+        return false;
+    }
 };
 
-class AS_Rank : public GridMap<float>
+class ACS_Rank : public GridMap<float>
 {
 private:
     int colony_num;    // 蚁群数量
     int max_iteration; // 最大迭代次数
     float pheromone_0, Q;
-    int alpha, beta;                        // pheromone, heuristic information的权重
-    float rho;                              // pheromone的挥发系数
+    int alpha, beta;                        // pheromone, 先验知识的权重
+    float rho, lambda;                      // pheromone的挥发系数,第k只蚂蚁的权重系数
     int node_num;                           // 点数量
     ACS_Node<float> ***nodes;               // 所有结点的体阵cuboid
     ACS_Node<float> *start_node, *end_node; // 起始点和终点的结点
@@ -184,23 +193,27 @@ private:
     /*
         更新第K只蚂蚁在路径上留下的信息素
     */
-    void update_pheromone(Agent<float> &agentK)
+    void update_pheromone(Agent<float> &agentK, int order)
     {
+        if(agentK.L == INF_FLOAT || order > lambda - 1)
+            return;
         const std::vector<ACS_Node<float> *> *path = agentK.getPath();
         const std::vector<int> *next_select = agentK.nodeIndex();
 
         int _size = path->size();
-
+        bool isOnBestPath;
         for (int i(0); i < _size - 1; i++)
         {
-            (*path)[i]->adjacency_infos[(*next_select)[i]].pheromone += Q / agentK.L;
+            isOnBestPath = best.findPathNode((*path)[i]) && best.findPathNode((*path)[i]->adjacency_nodes[(*next_select)[i]]);
+            (*path)[i]->adjacency_infos[(*next_select)[i]].pheromone +=
+                (lambda - order) * Q / agentK.L + static_cast<float>(isOnBestPath) * lambda * Q / best.L;
         }
     }
 
     /*
         使用 Ant Cycle model
     */
-    void computeSolution()
+    void computeSolution(float predict_path_len)
     {
         ACS_Node<float> *cur, *next;
         std::vector<float> _path_index;
@@ -214,18 +227,21 @@ private:
 
         for (int i(0); i < max_iteration; i++)
         {
+            /*
+                迭代参数优化
+            */
+            // 每次迭代都更改Q为当前最佳路径的x倍，x才是真正意义上的Q，但此时Q与路径长度无关
+            // x / L为每次蚂蚁走过后期望增加的信息素总值，这个值应与信息素初值接近
+            // 蚂蚁数量约为搜索总步数的1/2~1/3
+            colony_num = 0.33 * (best.L < predict_path_len ?  best.L : predict_path_len) / precision;
+            lambda = 0.2 * colony_num;
+            Q = pheromone_0 / lambda * (best.L < predict_path_len ?  best.L : predict_path_len);
             agents.resize(colony_num);
+
             printf("[ACS 3D] Computing iteration: %d | Total Progress: %d %% \r", i + 1,
                    (int)((float)(i + 1) / (float)max_iteration * 100));
 
-            //信息素挥发
-            for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x)
-            {
-                for (int i(0); i < 6; i++)
-                    nodes[z][y][x].adjacency_infos[i].pheromone *= rho;
-            });
-
-            for_each(agents.begin(), agents.end(), [&](auto agentK)
+            for(auto& agentK:agents)
             {
                 agentK.addStartNode(start_node);
                 cur = start_node;
@@ -234,47 +250,40 @@ private:
                 {
                     cur = next;
                 }
+
                 // 更新最优解
                 if (agentK.L < best.L)
                     best = agentK;
+            }
 
-                // 更新留下的信息素
-                update_pheromone(agentK);
+            // 信息素挥发-更新留下的信息素-重置蚂蚁
+            for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x)
+            {
+                for (int k(0); k < 6; k++)
+                    nodes[z][y][x].adjacency_infos[k].pheromone *= rho;
             });
-
-            // 重置蚂蚁
+            std::sort(agents.begin(), agents.end(), [](Agent<float> &a, Agent<float> &b)->bool
+                      { return a.L < b.L; });
+            int agent_order = 1;
+            for(auto &agentK: agents)
+            {
+                update_pheromone(agentK, agent_order);
+                agent_order++;
+            }
             agents.clear();
 
-            /*
-                迭代参数优化
-            */
             _path_index.push_back(i);
             _path_lens.push_back(best.L);
+            // if(last_path == best.L)
+            //     local_min++;
+            // else
+            //     local_min = 0;
 
-            if(last_path == best.L)
-                local_min++;
-            else
-                local_min = 0;
-
-            if(local_min == 20 && colony_num < 500)
-            {   //进入局部最优
-                local_min = 0;
-                colony_num *= 1.0;
-                // const std::vector<ACS_Node<float> *> *path = best.getPath();
-                // for_each(path->begin(), path->end(), [&](auto _it)
-                // {
-                //     path_x.push_back(_it->pt.x);
-                //     path_y.push_back(_it->pt.y);
-                //     path_z.push_back(_it->pt.z);
-                // });
-                // plot_path();
-                // show_plot();
-                // path_x.clear();
-                // path_y.clear();
-                // path_z.clear();
-            }
-            // 每次迭代都更改Q为当前最佳路径的x倍，x才是真正意义上的Q，但此时Q与路径长度无关
-            Q = best.L == INF_FLOAT ? Q : 0.8 * best.L;
+            // if(local_min == 20 && colony_num < 500)
+            // {   //进入局部最优
+            //     local_min = 0;
+            //     colony_num *= 1.0;
+            // }
             last_path = best.L;
             printf("Path length: %.4f, colony num %d \n", _path_lens[i], colony_num);
         }
@@ -300,7 +309,7 @@ private:
         });
     }
 public:
-    AS_Rank()
+    ACS_Rank()
     {
         nodes = NULL;
     }
@@ -310,10 +319,11 @@ public:
         alpha = 1;
         beta = 5;
         rho = 0.8;
-        pheromone_0 = 1.0;
+        max_iteration = 250;// 自动收敛
+        colony_num = 60;    // 根据路径长度自适应
+
+        pheromone_0 = 1;
         Q = 50;
-        max_iteration = 250;
-        colony_num = 100;
         node_num = size_of_map();
         srand(time(0));
 
@@ -408,7 +418,7 @@ public:
         printf("[ACS 3D] Created %d nodes, node cubiod [x: %d, y: %d, z: %d]\r\n", size_of_map(), rangeX, rangeY, rangeZ);
     }
 
-    void searchBestPathOfPoints(std::string file_name = "")
+    void searchBestPathOfPoints(std::string file_name = "", float predict_path_len = 10)
     {
         int point_num = 0;
         std::vector<Point3<float>> points;
@@ -452,14 +462,14 @@ public:
                 {
                     //SearchRoute.setPoints(Point3f(-1.2, -1.2, 0), Point3f(1.2, 1.2, 2.2));
                     //SearchRoute.setPoints(Point3f(2.36, 0, 0.9), Point3f(3.2, -0.2, 0.9));
-                    computeSolution();
+                    computeSolution(predict_path_len);
                     reset();
 
-                    printf("[ACS 3D] <Point (%.3f, %.3f, %.3f) : Point (%.3f, %.3f, %.3f)> Path length: %d\r\n", 
+                    printf("[ACS 3D] <Point (%.3f, %.3f, %.3f) : Point (%.3f, %.3f, %.3f)> Path length: %.3f\r\n", 
                             points[i].x, points[i].y, points[i].z,
                             points[j].x, points[j].y, points[j].z,
-                            (int)best.L);
-                    fprintf(fp, "%d\n", (int)best.L);
+                            best.L);
+                    fprintf(fp, "%.3f\n", best.L);
                     dis_num++;
                 }
                 else
