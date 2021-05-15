@@ -125,3 +125,7 @@ bool ComWithSevrer()
   
 ## **参考文献**
   1. X. Wang, L. Xue, Y. Yan, and X. Gu, “Welding robot collision-free path optimization,” Appl. Sci., vol. 7, no. 2, 2017, doi: 10.3390/app7020089.
+
+  2. Bullnheimer, Bernd & Hartl, Richard & Strauss, Christine. (1999). A New Rank Based Version of the Ant System - A Computational Study. Central European Journal of Operations Research. 7. 25-38. 
+
+  3. 吴玉香,王超.一种改进的移动机器人三维路径规划方法[J].华南理工大学学报(自然科学版),2016,44(09):53-60.

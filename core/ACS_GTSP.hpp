@@ -17,22 +17,9 @@
 #include <bits/stdc++.h>
 
 #define INF 0x3f3f3f3f
-#define sqr(x) ((x) * (x))
 #define eps 1e-8
 
 typedef std::pair<int, int> pair_int;
-
-// typedef struct vertex
-// {
-//     double x, y; // 城市坐标
-//     int id;      // 城市编号
-
-//     int input(FILE *fp)
-//     {
-//         return fscanf(fp, "%d %lf %lf", &id, &x, &y);
-//     }
-
-// } vertex;
 
 typedef struct ACS_Tour
 {                               //路径
@@ -76,7 +63,7 @@ typedef struct ACS_Tour
         return path[i].second;
     }
 
-    void print(FILE *fp)
+    void print()
     {
         int sz = path.size();
         for (int i = 0; i < sz; i++)
@@ -113,26 +100,6 @@ private:
     ACS_Tour *tour, best;
     Vertex3<float> *node;
     bool init_flag;
-
-    // //欧拉距离
-    // double EUC_2D(const vertex &a, const vertex &b)
-    // {
-    //     return sqrt(sqr(a.x - b.x) + sqr(a.y - b.y));
-    // }
-
-    // //快速幂，计算x ^ y，时间复杂度O(logn)
-    // double power(double x, int y)
-    // {
-    //     double ans = 1;
-    //     while (y)
-    //     {
-    //         if (y & 1)
-    //             ans *= x;
-    //         x *= x;
-    //         y >>= 1;
-    //     }
-    //     return ans;
-    // }
 
     void reset()
     {
@@ -253,68 +220,6 @@ private:
 
 public:
     /*构造函数初始化参数*/
-    // ACS_GTSP(std::string file_name, int _type)
-    // {
-    //     type = _type;
-    //     if (readFromFile(file_name))
-    //     {
-    //         init_flag = true;
-    //         init_param();
-    //     }
-    //     else
-    //     {
-    //         std::cout << "Parameters is not initialized, can not compute solution." << std::endl;
-    //     }
-    // }
-
-    // bool readFromFile(std::string file_name)
-    // { //输入
-    //     printf("Read file: %s and process data type %i \n", file_name.c_str(), type);
-    //     FILE *fp = fopen(file_name.c_str(), "r");
-
-    //     if (fp == NULL)
-    //     {
-    //         std::cout << "Failed to read file, reject to init." << std::endl;
-    //         return false;
-    //     }
-
-    //     fscanf(fp, "%d", &city_num);
-    //     node = new vertex[city_num + 5];
-    //     dis = new double *[city_num + 5];
-    //     double tmp = 0;
-    //     int cnt = 0;
-    //     if (type == 1)
-    //     {
-    //         for (int i = 0; i < city_num; i++)
-    //         {
-    //             dis[i] = new double[city_num];
-    //             for (int j = 0; j < city_num; j++)
-    //             {
-    //                 fscanf(fp, "%lf", &dis[i][j]);
-    //                 tmp += i != j ? dis[i][j] : 0; // i == j的时候 dis不存在，所以不考虑。
-    //                 cnt += i != j ? 1 : 0;         // i == j的时候 dis不存在，所以不考虑。
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         for (int i = 0; i < city_num; i++)
-    //             node[i].input(fp);
-    //         for (int i = 0; i < city_num; i++)
-    //         {
-    //             dis[i] = new double[city_num];
-    //             for (int j = 0; j < city_num; j++)
-    //             {
-    //                 dis[i][j] = EUC_2D(node[i], node[j]); // 计算距离
-    //                 tmp += i != j ? dis[i][j] : 0;        // i == j的时候 dis不存在，所以不考虑。
-    //                 cnt += i != j ? 1 : 0;                // i == j的时候 dis不存在，所以不考虑。
-    //             }
-    //         }
-    //     }
-    //     pheromone_0 = (double)cnt / (tmp * city_num); //pheromone初始值，这里是1 / (avg * N)其中avg为图网中所有边边权的平均数。
-    //     fclose(fp);
-    //     return true;
-    // }
 
     // 无向图读取
     bool readFromGraphFile(std::string filename)
@@ -368,7 +273,7 @@ public:
                     bad_times++; //记录当前未更新代数，若迭代多次未更新，认为进入局部最优
             }
             printf("Best in all = %.2lf\n", best.L); //输出目标值
-            best.print(stdout);                      //输出路径
+            best.print();                            //输出路径
             return true;
         }
         else

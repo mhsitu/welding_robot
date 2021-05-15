@@ -131,12 +131,12 @@ void Usr_Main()
 void Usr_ConfigSimulation()
 {
     //添加关节对象，每个关节可以读写位置和速度，不用单独控制每个关节可以注释下面这段
-    // Joint[0] = CoppeliaSim->Add_Object("IRB4600_joint1", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
-    // Joint[1] = CoppeliaSim->Add_Object("IRB4600_joint2", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
-    // Joint[2] = CoppeliaSim->Add_Object("IRB4600_joint3", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
-    // Joint[3] = CoppeliaSim->Add_Object("IRB4600_joint4", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
-    // Joint[4] = CoppeliaSim->Add_Object("IRB4600_joint5", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
-    // Joint[5] = CoppeliaSim->Add_Object("IRB4600_joint6", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+    Joint[0] = CoppeliaSim->Add_Object("IRB4600_joint1", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+    Joint[1] = CoppeliaSim->Add_Object("IRB4600_joint2", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+    Joint[2] = CoppeliaSim->Add_Object("IRB4600_joint3", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+    Joint[3] = CoppeliaSim->Add_Object("IRB4600_joint4", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+    Joint[4] = CoppeliaSim->Add_Object("IRB4600_joint5", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
+    Joint[5] = CoppeliaSim->Add_Object("IRB4600_joint6", JOINT, {SIM_VELOCITY | CLIENT_RW, SIM_POSITION | CLIENT_RW});
 
     //读写执行末端相对于器件坐标系的位姿
     Tip_target = CoppeliaSim->Add_Object("IRB4600_IkTarget", OTHER_OBJECT, {SIM_POSITION | CLIENT_WO, SIM_ORIENTATION | CLIENT_WO});
@@ -199,19 +199,19 @@ int main(int argc, char *argv[])
 
     // //搜索路径
     ACS_Rank SearchPath;
-    SearchPath.creatGridMap(meshes, 0.1, 5);
+    SearchPath.creatGridMap(meshes, 0.05, 10);
     SearchPath.initFromGridMap();
     SearchPath.searchBestPathOfPoints("weld_points.in", 10);
-    ACS_GTSP GlobalRoute;
-    GlobalRoute.readFromGraphFile("graph.in");
-    GlobalRoute.computeSolution();
+    // ACS_GTSP GlobalRoute;
+    // GlobalRoute.readFromGraphFile("graph.in");
+    // GlobalRoute.computeSolution();
     // 结果可视化
-    SearchPath.plot_route_point(1);
-    SearchPath.plot_grid_map(1);
+    SearchPath.plot_route_point(2);
+    //SearchPath.plot_grid_map(1);
     SearchPath.show_plot();
     exit(0);
 
-    CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
+
     /*
         System Logger tool init.
     */
@@ -221,6 +221,7 @@ int main(int argc, char *argv[])
     /*
         Simulation connection init.
     */
+    CoppeliaSim_Client *hClient = &CoppeliaSim_Client::getInstance();
     std::cout << "[CoppeliaSim Client] Connecting to server.. \n";
     while (!hClient->Start("127.0.0.1", 5000, 5, false))
     {

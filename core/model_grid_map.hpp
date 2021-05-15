@@ -180,7 +180,7 @@ public:
 
         display_progress(GRID_PROGRESS::READ_MESHES, mesh.size());
         // 创建[0,range]的结点体阵，单位为1，其中range由栅格精度percision决定
-        // 1是补偿浮点转int的截断精度
+        // 1是补偿浮点转int的截断精度, wall为边沿留出的自由空间
         rangeX = (int)((max_x - min_x) / precision) + 1 + 2 * wall;
         rangeY = (int)((max_y - min_y) / precision) + 1 + 2 * wall;
         rangeZ = (int)((max_z - min_z) / precision) + 1 + 2 * wall;

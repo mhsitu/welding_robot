@@ -132,9 +132,11 @@ public:
         return _instance;
     }
 
-    bool Start(const char* p_IP, int32_t p_conection_port, int commThreadCycleInMs, bool synchronousMode = false, bool multiClientMode = false);
+    bool Start(const char* p_IP, int32_t p_conection_port, int commThreadCycleInMs, 
+                bool synchronousMode = false, bool multiClientMode = false);
     bool Start();
-    bool Set_startParam(const char *p_IP, int32_t p_conection_port, int commThreadCycleInMs, bool synchronousMode = false, bool multiClientMode = false);
+    bool Set_startParam(const char *p_IP, int32_t p_conection_port, int commThreadCycleInMs, 
+                bool synchronousMode = false, bool multiClientMode = false);
     _simObjectHandle_Type *Add_Object(std::string full_name, _simObj_Type type, std::initializer_list<simxInt> operation_ls);
     _simSignalHandle_Type *Add_Object(std::string full_name, _simSignal_Type type, std::initializer_list<simxInt> operation_ls);
     _simCollisHandle_Type* Add_Object(std::string full_name);

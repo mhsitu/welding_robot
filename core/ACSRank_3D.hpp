@@ -1,12 +1,13 @@
 /**
   ******************************************************************************
   * @file    ACSRank_3D.hpp
-  * @brief   Using Ant Colony System to search a path in 3D grid-based map.
+  * @brief   Using Rank Based Ant Colony System to search a path in 3D 
+  *          grid-based map, the ACSRnk_3D is optimized to automatically choose
+  *          searching parameters.
   * @author  Stuart(South China University of Technology)
   *          1356046979@qq.com
   * @date    18/04/2021
   * @version 0.1
-  * TODO 使用预搜索路径长度代替无穷大
   ******************************************************************************
 */
 #ifndef _ACS_3D_HPP
@@ -114,7 +115,7 @@ private:
     int max_iteration; // 最大迭代次数
     float pheromone_0, Q;
     int alpha, beta;                        // pheromone, 先验知识的权重
-    float rho, lambda;                      // pheromone的挥发系数,第k只蚂蚁的权重系数
+    float rho, lambda;                      // pheromone的挥发系数,蚁群中精英蚂蚁的比例
     int node_num;                           // 点数量
     ACS_Node<float> ***nodes;               // 所有结点的体阵cuboid
     ACS_Node<float> *start_node, *end_node; // 起始点和终点的结点
@@ -228,8 +229,12 @@ private:
         best.L = INF_FLOAT;
         last_path = INF_FLOAT;
 
+        clock_t time = clock();
+
         for (int i(0); i < max_iteration; i++)
         {
+            printf("[ACS 3D] Computing iteration: %d | Total Progress: %d%% | Search time: %.1f \r", i + 1,
+                   (int)((float)(i + 1) / (float)max_iteration * 100), (float)(clock() - time)/CLOCKS_PER_SEC);
             /*
                 迭代参数优化
             */
@@ -240,9 +245,6 @@ private:
             lambda = 0.2 * colony_num;
             Q = pheromone_0 / lambda * (best.L == INF_FLOAT ? predict_path_len : best.L);
             agents.resize(colony_num);
-
-            printf("[ACS 3D] Computing iteration: %d | Total Progress: %d %% \r", i + 1,
-                   (int)((float)(i + 1) / (float)max_iteration * 100));
 
             for(auto& agentK:agents)
             {
@@ -259,7 +261,7 @@ private:
                     best = agentK;
             }
 
-            // 信息素挥发-更新留下的信息素-重置蚂蚁
+            // 信息素挥发-更新留下的信息素(更新部分)-重置蚂蚁
             for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x)
             {
                 for (int k(0); k < 6; k++)
@@ -273,16 +275,29 @@ private:
                 update_pheromone(agentK, agent_order);
                 agent_order++;
             }
+
+            // 检测到搜索停滞，局部最优后清空信息素
+            if(best.L == last_path)
+                local_min++;
+            else
+                local_min = 0;
+            if(local_min >= 30)
+            {
+                
+                local_min = 0;
+            }
+            last_path = best.L;
             agents.clear();
 
             _path_index.push_back(i);
             _path_lens.push_back(best.L);
-            last_path = best.L;
+
             //printf("Path length: %.4f, colony num %d \n", _path_lens[i], colony_num);
         }
-        // plt::plot(_path_index, _path_lens, "b-");
+        printf("\n");
+        plt::plot(_path_index, _path_lens, "b-");
         // plot_grid_map();
-        // plot_path(best);
+        plot_path(best,2);
         // show_plot();
     }
 
@@ -441,9 +456,9 @@ public:
         FILE *fp = fopen("graph.in", "w");
         fprintf(fp, "%d %d\n",0,0);
         int dis_num = 0;
-        for(int i=0; i<point_num;i++)
+        for(int i=0; i<point_num - 6;i++)
         {
-            for(int j = i+1; j < point_num;j++)
+            for(int j = i+1; j < point_num - 6;j++)
             {
                 if (setPoints(route_points[i], route_points[j]))
                 {
