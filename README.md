@@ -10,10 +10,10 @@
 
 - **编译运行：**
   1. 检查文件夹路径中是否为全英文，路径包含中文会报错
-  2. 打开vscode， 编译并运行`./build/bin/welding_robot.exe`
+  2. 打开vscode， 编译并在vscode中运行（`launch.json`已配置好，这样运行目录会切换到主目录，方便程序读写文件）
 
 - **开始仿真：**
-  1. 打开目录下的`/sim/`文件夹，运行`welding_sim.ttt`
+  1. 打开目录下的`/files/`文件夹，运行`welding_sim.ttt`
 
 ### **2. 在实物系统上运行** 
 

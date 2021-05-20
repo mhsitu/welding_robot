@@ -76,7 +76,7 @@ public:
         path.push_back(node);
         node_index.push_back(index);
         L += _dis;
-    }
+    } 
 
     void addStartNode(ACS_Node<T> *_start)
     {
@@ -114,8 +114,8 @@ private:
     int colony_num;    // 蚁群数量
     int max_iteration; // 最大迭代次数
     float pheromone_0, Q;
-    int alpha, beta;                        // pheromone, 先验知识的权重
-    float rho, lambda;                      // pheromone的挥发系数,蚁群中精英蚂蚁的比例
+    int alpha;                              // pheromone的权重
+    float beta,rho, lambda;                 // 先验知识权重，pheromone的挥发系数,蚁群中精英蚂蚁的比例
     int node_num;                           // 点数量
     ACS_Node<float> ***nodes;               // 所有结点的体阵cuboid
     ACS_Node<float> *start_node, *end_node; // 起始点和终点的结点
@@ -123,6 +123,7 @@ private:
     Agent<float> best;                      // 当前最优蚂蚁
     std::vector<float> path_x, path_y, path_z;
     std::vector<Point3<float>> route_points;
+  
     /**
     * @brief next nodes of ant K.  
     * @param agentK ant K
@@ -138,7 +139,8 @@ private:
         float prob_sum = 0, total = 0;
 
         // 查找所有可达点和信息素总和
-        for (int i(0); i < 6; i++)
+        int _adaj_size = cur->adjacency_nodes.size();
+        for (int i(0); i < _adaj_size; i++)
         { // 检查邻近结点是否被这只蚂蚁走过，防止闭环
             int _id = cur->adjacency_nodes[i]->id;
             auto iter = agentK.tabu_list.find(_id);
@@ -149,8 +151,8 @@ private:
                     // 加入先验信息：该点与当前点向量在目标点方向上的余弦值
                     Point3<float> vector_b = cur->adjacency_nodes[i]->pt - cur->pt;
                     float cos = Point3<float>::dot(vector_a, vector_b) / (vector_a.norm() * vector_b.norm());
-
-                    cur->adjacency_infos[i].info = power(cur->adjacency_infos[i].pheromone, alpha) * (1 + power(cos, beta));
+                    //cur->adjacency_infos[i].info = power(cur->adjacency_infos[i].pheromone, alpha);
+                    cur->adjacency_infos[i].info = power(cur->adjacency_infos[i].pheromone, alpha) * (1 + beta * cos);
                     total += cur->adjacency_infos[i].info;
                     J.push_back(i);
                 }
@@ -168,7 +170,7 @@ private:
         float rnd = (float)(rand()) / (float)RAND_MAX;
         rnd *= total;
 
-        for (int i(5); i >= 0; i--)
+        for (int i(_adaj_size-1); i >= 0; i--)
         {
             if (i == J.back())
             {
@@ -208,6 +210,8 @@ private:
             isOnBestPath = best.findPathNode((*path)[i]) && best.findPathNode((*path)[i]->adjacency_nodes[(*next_select)[i]]);
             (*path)[i]->adjacency_infos[(*next_select)[i]].pheromone +=
                 (lambda - order) * Q / agentK.L + static_cast<float>(isOnBestPath) * lambda * Q / best.L;
+
+            //(*path)[i]->adjacency_infos[(*next_select)[i]].pheromone += Q / agentK.L;
         }
     }
 
@@ -281,9 +285,9 @@ private:
                 local_min++;
             else
                 local_min = 0;
-            if(local_min >= 30)
+            if(local_min >= 60)
             {
-                
+                //reset();
                 local_min = 0;
             }
             last_path = best.L;
@@ -295,10 +299,10 @@ private:
             //printf("Path length: %.4f, colony num %d \n", _path_lens[i], colony_num);
         }
         printf("\n");
-        plt::plot(_path_index, _path_lens, "b-");
-        // plot_grid_map();
-        plot_path(best,2);
-        // show_plot();
+        //plt::plot(_path_index, _path_lens, "b-");
+        //plot_grid_map(3);
+        //plot_path(best,2);
+        //show_plot();
     }
 
     void reset()
@@ -310,20 +314,14 @@ private:
                 nodes[z][y][x].adjacency_infos[i].pheromone = pheromone_0;
         });
     }
-public:
-    ACS_Rank()
-    {
-        nodes = NULL;
-    }
 
     void initFromGridMap()
     {
         alpha = 1;
-        beta = 3;
+        beta = 0.8;
         rho = 0.8;
-        max_iteration = 150;// 自动收敛
-        colony_num = 60;    // 根据路径长度自适应
-
+        max_iteration = 100;// 自动收敛
+        colony_num = 100;    // 根据路径长度自适应
         pheromone_0 = 1;
         Q = 50;
         node_num = size_of_map();
@@ -351,80 +349,86 @@ public:
                 3. 对应负向结点下标为4,5,6, 那么i和i+3就是一对相对的面
                 4. 初始化信息素, 由于是相邻点，点间距离都设为1, herustic = 1 / (info_matrix[i][j].distance + eps);
             */
-            if (x + 1 >= rangeX) //1
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
-            }
-            else
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x + 1]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(precision, pheromone_0, 0));
-            }
 
-            if (y + 1 >= rangeY) //2
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
-            }
-            else
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y + 1][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(precision, pheromone_0, 0));
-            }
+            int _pt_type;
+            float distance;
+            //遍历以本结点为中心的边长为3的空间立方体，Z
+            for (int i(-1); i <= 1; i++)
+            {   // Y
+                for (int j(-1); j <= 1;j++)
+                {   // X
+                    for (int k(-1); k <= 1; k++)
+                    {   // 顶角邻格,三个数全不为0
+                        _pt_type = i * j * k != 0 ? 3 :
+                        // 邻面边邻格，有且只有一个为0
+                        (i == 0 && j * k != 0) ||(j == 0 && i * k != 0) || (k == 0 && i * j != 0) ? 2 :
+                        // 自己 / 邻面中间点
+                        (i == 0 && j == 0 && k == 0) ? 0 : 1;
 
-            if (z + 1 >= rangeZ) //3
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
-            }
-            else
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z + 1][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(precision, pheromone_0, 0));
-            }
+                        /*
+                            下面是为完整立方体写的，第2，3种情况不为0的话就是完整的26个立方体结点；
+                            考虑到这样路径会更加连续，但是收敛时间会翻几倍，还没找到很好的处理方法；
+                            暂时只按6个面来搜索
+                        */
+                        switch(_pt_type)
+                        {
+                            case 0:
+                                distance = 0;
+                                break;
+                            case 1:
+                                distance = precision;
+                                break;
+                            case 2:
+                                distance = 0; //precision * 1.414f;
+                                break;
+                            case 3:
+                                distance = 0; //precision * 1.732f;
+                                break;
+                            default:
+                                printf("Error point type: %d, %d, %d and index: %d, %d, %d", z, y, x, i, j, k);
+                        }
+                        if(distance != 0){
+                            // 任意一维超出边界该点都为无效点
+                            if(x + k >= rangeX || x + k < 0 
+                                || y + j >= rangeY || y + j < 0
+                                || z + i >= rangeZ || z + i < 0)
+                            {
+                                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
+                                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
+                            }
+                            else
+                            {
+                                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z+i][y+j][x+k]);
+                                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(distance, pheromone_0, 0));
+                            }
+                        }
 
-            if (x - 1 < 0) //4
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
-            }
-            else
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x - 1]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(precision, pheromone_0, 0));
-            }
-
-            if (y - 1 < 0) //5
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
-            }
-            else
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y - 1][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(precision, pheromone_0, 0));
-            }
-
-            if (z - 1 < 0) //6
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(0, 0, 0));
-            }
-            else
-            {
-                nodes[z][y][x].adjacency_nodes.push_back(&nodes[z - 1][y][x]);
-                nodes[z][y][x].adjacency_infos.push_back(_Inf_of_Points_t<float>(precision, pheromone_0, 0));
+                    }
+                }
             }
         });
         printf("[ACS 3D] Created %d nodes, node cubiod [x: %d, y: %d, z: %d]\r\n", size_of_map(), rangeX, rangeY, rangeZ);
     }
 
-    void searchBestPathOfPoints(std::string file_name = "", float predict_path_len = 10)
+public:
+    Agent<float> **best_matrix;  
+    ACS_Rank()
+    {
+        nodes = NULL;
+    }
+
+    /**
+    * @brief Search best path between given points  
+    * @param predict_path_len single path length
+    * @param read_file file name to read search points
+    * @param output_file graph file to record
+    * @retval void
+    */
+    void searchBestPathOfPoints(float predict_path_len = 10, std::string read_file = "", std::string output_file = "")
     {
         int point_num = 0;
 
-        if(file_name == "")
+        if(read_file == "")
         {
             std::cout << "[ACS 3D] Please enter passing point number: ";
             std::cin >> point_num;
@@ -437,7 +441,7 @@ public:
         }
         else
         {
-            FILE *fp = fopen(file_name.c_str(), "r");  
+            FILE *fp = fopen(read_file.c_str(), "r");  
             if (fp == NULL)
             {
                 std::cout << "[ACS 3D] Failed to read file, reject to init." << std::endl;
@@ -449,16 +453,25 @@ public:
             {
                 fscanf(fp, "%f %f %f", &route_points[i].x, &route_points[i].y, &route_points[i].z);
             }
+            best_matrix = new Agent<float>*[point_num];
+            for(int i = 0; i < point_num; i++)
+            {
+                best_matrix[i] = new Agent<float>[point_num];
+            }
             fclose(fp);
         }
 
-        // 蚁群搜索无碰撞路径，不同点两两之间的距离都算一次
-        FILE *fp = fopen("graph.in", "w");
+        // 初始化参数和信息链表
+        initFromGridMap();
+        checkRoutePoints();
+
+        // 蚁群搜索无碰撞路径，两两之间的距离都算一次
+        FILE *fp = fopen(output_file.c_str(), "w");
         fprintf(fp, "%d %d\n",0,0);
         int dis_num = 0;
-        for(int i=0; i<point_num - 6;i++)
+        for(int i=0; i<point_num;i++)
         {
-            for(int j = i+1; j < point_num - 6;j++)
+            for(int j = i+1; j < point_num;j++)
             {
                 if (setPoints(route_points[i], route_points[j]))
                 {
@@ -466,7 +479,8 @@ public:
                     //SearchRoute.setPoints(Point3f(2.36, 0, 0.9), Point3f(3.2, -0.2, 0.9));
                     computeSolution(predict_path_len);
                     reset();
-
+                    best_matrix[i][j] = best;
+                    best_matrix[j][i] = best;
                     printf("[ACS 3D] <Point (%.3f, %.3f, %.3f) : Point (%.3f, %.3f, %.3f)> Path length: %.3f\r\n", 
                             route_points[i].x, route_points[i].y, route_points[i].z,
                             route_points[j].x, route_points[j].y, route_points[j].z,
@@ -486,12 +500,38 @@ public:
         rewind(fp);
         fprintf(fp, "%d %d\r", point_num,dis_num);
         fclose(fp);
-        printf("[ACS 3D] %d Result has been written to \"graph.in\" \r\n", dis_num);
+        printf("[ACS 3D] %d Result has been written to \"%s\" \r\n", dis_num, output_file.c_str());
     }
 
     const Agent<float> *getSolution() const
     {
         return &best;
+    }
+
+    void checkRoutePoints()
+    {
+        float t =  1.2*precision;
+        bool isFind;
+        for(int i = 0; i < route_points.size(); i++)
+        {
+            isFind = false;
+            for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
+                if (my_abs(route_points[i].x - nodes[z][y][x].pt.x) < t &&
+                    my_abs(route_points[i].y - nodes[z][y][x].pt.y) < t &&
+                    my_abs(route_points[i].z - nodes[z][y][x].pt.z) < t &&
+                    nodes[z][y][x].isFree)
+                {
+                    start_node = &nodes[z][y][x];
+                    isFind = true;
+                    return;
+                }
+            });
+
+            if(!isFind)
+                printf("[ACS 3D] Invalid route point, please reset point(%.3f, %.3f, %.3f) \n",
+                         route_points[i].x, route_points[i].y, route_points[i].z);
+        }
+        printf("[ACS 3D] %d route points have been checked. \n", route_points.size());
     }
 
     bool setPoints(Point3<float> &start, Point3<float> &end)
@@ -501,7 +541,7 @@ public:
         end_node = NULL;
         for_each_nodes(nodes, rangeX, rangeY, rangeZ, [&](int z, int y, int x)
         {
-            float t =  precision;
+            float t =  1.2*precision;
             if (my_abs(start.x - nodes[z][y][x].pt.x) < t &&
                 my_abs(start.y - nodes[z][y][x].pt.y) < t &&
                 my_abs(start.z - nodes[z][y][x].pt.z) < t &&
@@ -535,7 +575,7 @@ public:
         });
 
         std::map<std::string, std::string> keywords;
-        keywords.insert(std::pair<std::string, std::string>("c", "black"));
+        keywords.insert(std::pair<std::string, std::string>("c", "red"));
         //keywords.insert(std::pair<std::string, std::string>("marker", "o"));
         keywords.insert(std::pair<std::string, std::string>("linewidth", "2"));
         //plt::scatter(path_x, path_y, path_z, 1, keywords,2);

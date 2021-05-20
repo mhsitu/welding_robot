@@ -25,6 +25,7 @@ namespace plt = matplotlibcpp;
 enum class GRID_PROGRESS
 {
     READ_MESHES,
+    READ_GRID_MAP,
     CREATED_NODES,
     OPERATING_MESHES,
     WRITING_FILE
@@ -64,7 +65,7 @@ public:
     // 计算A,B向量的点积
     static T dot(const Point3<T> &a, const Point3<T> &b)
     {
-        return (a.x * b.x + b.y * b.y + a.z * b.z);
+        return (a.x * b.x + a.y * b.y + a.z * b.z);
     }
 };
 
@@ -147,14 +148,15 @@ public:
      * @param percision 
      * @param wall 
      */
-    Vertex3<T> ***creatGridMap(const std::vector<Triangles<T>> &mesh, T _precision, int _wall)
+    Vertex3<T> ***creatGridMap(const std::vector<Triangles<T>> &mesh, T _precision, int _wall, std::string file_name="")
     {
         if(grid_map != NULL)
+        {
+            x_list.clear();
+            y_list.clear();
+            z_list.clear();
             delete_all_nodes(grid_map, rangeX, rangeY, rangeZ);
-
-        // 区域的最值
-        T min_x, min_y, min_z;
-        T max_x, max_y, max_z;
+        }
 
         precision = _precision;
         wall = _wall;
@@ -177,7 +179,18 @@ public:
                 min_z = _it.vertex[i].z < min_z ? _it.vertex[i].z : min_z;
             }
         });
+/* 这段为了让显示更直观*/
+        // T max_len = max_x - min_x;
+        // max_len = max_y - min_y > max_len ? max_y - min_y:max_len;
+        // max_len = max_z - min_z > max_len ? max_z - min_z:max_len;
 
+        // x_list.push_back(0.5 * (max_x - min_x) + max_len);
+        // y_list.push_back(0.5 * (max_y - min_y) + max_len);
+        // z_list.push_back(0.5 * (max_z - min_z) + max_len);
+        // x_list.push_back(0.5 * (max_x - min_x) - max_len);
+        // y_list.push_back(0.5 * (max_y - min_y) - max_len);
+        // z_list.push_back(0.5 * (max_z - min_z) - max_len);
+/**/
         display_progress(GRID_PROGRESS::READ_MESHES, mesh.size());
         // 创建[0,range]的结点体阵，单位为1，其中range由栅格精度percision决定
         // 1是补偿浮点转int的截断精度, wall为边沿留出的自由空间
@@ -185,7 +198,7 @@ public:
         rangeY = (int)((max_y - min_y) / precision) + 1 + 2 * wall;
         rangeZ = (int)((max_z - min_z) / precision) + 1 + 2 * wall;
 
-        int index = 0;
+        map_size = 0;
         creat_all_nodes(grid_map, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
             grid_map[z][y][x].pt.x = x < wall ? min_x - (wall - x) * precision  : 
                 (x >= (rangeX - wall) ? max_x + (x - rangeX + wall) * precision : min_x + (x - wall) * precision);
@@ -197,15 +210,15 @@ public:
                  (z >= (rangeZ - wall) ? max_z + (z - rangeZ + wall) * precision : min_z + (z - wall) * precision);
 
             grid_map[z][y][x].isFree = true;
-            grid_map[z][y][x].id = index;
-            index++;
+            grid_map[z][y][x].id = map_size;
+            map_size++;
         });
-        map_size = index;
+
         display_progress(GRID_PROGRESS::CREATED_NODES, map_size);
 
         // TODO use mesh loop instead.
         // calculate distance from points to triangle plane
-        index = 0;
+        int index = 0;
         for_each(mesh.begin(), mesh.end(), [&](auto _it) {
             T D = -(_it.vertex[0].x * _it.nor_vec.x +
                     _it.vertex[0].y * _it.nor_vec.y +
@@ -239,7 +252,7 @@ public:
                              grid_map[z][y][x].pt.y * _it.nor_vec.y +
                              grid_map[z][y][x].pt.z * _it.nor_vec.z + D;
 
-                if (my_abs(distance) < precision)
+                if (my_abs(distance) < 1.2*precision)
                 {   //判断该点是否在三个顶点范围内
                     if (min_x <= grid_map[z][y][x].pt.x && grid_map[z][y][x].pt.x <= max_x &&
                         min_y <= grid_map[z][y][x].pt.y && grid_map[z][y][x].pt.y <= max_y &&
@@ -258,9 +271,87 @@ public:
             display_progress(GRID_PROGRESS::OPERATING_MESHES, progress, index);
         });
         
-        display_progress(GRID_PROGRESS::WRITING_FILE);
+        if(file_name!="")
+        {
+            FILE *fp = fopen(file_name.c_str(), "w");
+            fprintf(fp, "%d %d %d %d %f %d\n", map_size, rangeX, rangeY, rangeZ, precision, wall);
+            fprintf(fp, "%f %f %f %f %f %f\n", min_x, min_y, min_z, max_x, max_y, max_z);
+            for(int i=0; i< rangeZ; i++)
+            {
+                for(int j = 0; j < rangeY; j++)
+                {
+                    for(int k = 0; k < rangeX; k++)
+                    {
+                        fprintf(fp, "%d ", (int)grid_map[i][j][k].isFree);
+                    }
+                    fprintf(fp, "\n");
+                }
+            }
+            fclose(fp);
 
+            display_progress(GRID_PROGRESS::WRITING_FILE,file_name.c_str());
+        }
+
+        printf("[Grid Map] Done! \r\n");
         return grid_map;
+    }
+
+    void readGridMap(std::string file_name)
+    { 
+        FILE *fp = fopen(file_name.c_str(), "r");
+        if (fp == NULL)
+        {
+            std::cout << "[Grid Map] Failed to read file, skipping..." << std::endl;
+            return;
+        }
+        fscanf(fp, "%d %d %d %d %f %d", &map_size, &rangeX, &rangeY, &rangeZ, &precision, &wall);
+        fscanf(fp, "%f %f %f %f %f %f", &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+
+        if(grid_map != NULL)
+        {
+            x_list.clear();
+            y_list.clear();
+            z_list.clear();
+            delete_all_nodes(grid_map, rangeX, rangeY, rangeZ);
+        }
+
+        int index = 0;
+        creat_all_nodes(grid_map, rangeX, rangeY, rangeZ, [&](int z, int y, int x) {
+            grid_map[z][y][x].pt.x = x < wall ? min_x - (wall - x) * precision  : 
+                (x >= (rangeX - wall) ? max_x + (x - rangeX + wall) * precision : min_x + (x - wall) * precision);
+
+            grid_map[z][y][x].pt.y = y < wall ? min_y - (wall - y) * precision : 
+                (y >= (rangeY - wall) ? max_y + (y - rangeY + wall) * precision : min_y + (y - wall) * precision);
+
+            grid_map[z][y][x].pt.z = z < wall ? min_z - (wall - z) * precision :
+                 (z >= (rangeZ - wall) ? max_z + (z - rangeZ + wall) * precision : min_z + (z - wall) * precision);
+
+            grid_map[z][y][x].isFree = true;
+            grid_map[z][y][x].id = index;
+            index++;
+        });
+
+        for(int i=0; i< rangeZ; i++)
+        {
+            for(int j = 0; j < rangeY; j++)
+            {
+                for(int k = 0; k < rangeX; k++)
+                {
+                    fscanf(fp, "%d", &grid_map[i][j][k].isFree);
+                    if(!grid_map[i][j][k].isFree)
+                    {
+                        x_list.push_back(grid_map[i][j][k].pt.x);
+                        y_list.push_back(grid_map[i][j][k].pt.y);
+                        z_list.push_back(grid_map[i][j][k].pt.z);
+                    }
+                }
+                //fprintf(fp, "\n");
+            }
+        }
+
+        fclose(fp);
+
+        display_progress(GRID_PROGRESS::READ_GRID_MAP,file_name.c_str());
     }
 
     Vertex3<T> ***ptr_grid_map() const
@@ -268,7 +359,7 @@ public:
         return grid_map;
     }
 
-    int size_of_map()
+    int size_of_map() const
     {
         return map_size;
     }
@@ -287,12 +378,15 @@ public:
     }
 
     T precision;                    // 每个栅格代表的实际大小
-    T wall;                         // 物体最大轮廓外留出空白圈的厚度
+    int wall;                       // 物体最大轮廓外留出空白圈的厚度
     int rangeX, rangeY, rangeZ;     // 每个维度的大小
 
 private:
     Vertex3<float> ***grid_map = NULL;
     std::vector<T> x_list, y_list, z_list;
+    // 区域的最值
+    T min_x, min_y, min_z;
+    T max_x, max_y, max_z;
     int map_size;
 
     void display_progress(GRID_PROGRESS prg, ...)
@@ -307,6 +401,9 @@ private:
             case GRID_PROGRESS::READ_MESHES:
                 printf("[Grid Map] %d triangles is scanned... \n", (int)va_arg(args, int));
                 break;
+            case GRID_PROGRESS::READ_GRID_MAP:
+                printf("\n[Grid Map] Successfully read grid map from %s \r\n", (char*)va_arg(args, char*));
+                break;
             case GRID_PROGRESS::CREATED_NODES:
                 printf("[Grid Map] %d nodes is created... \n", (int)va_arg(args, int));
                 break;
@@ -314,7 +411,7 @@ private:
                 printf("[Grid Map] Processing triangle: %d , Total Progress: %d %% \r", (int)va_arg(args, int), (int) va_arg(args, int));
                 break;
             case GRID_PROGRESS::WRITING_FILE:
-                printf("\n[Grid Map] Done! \r\n");
+                printf("\n[Grid Map] Successfully write to %s \r\n", (char*)va_arg(args, char*));
                 break;
         }
 

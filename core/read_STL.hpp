@@ -23,7 +23,7 @@ typedef Point3<float> Point3f;
 class STLReader
 {
 public:
-    bool ReadFile(std::string file_name)
+    bool readFile(std::string file_name)
     {
         char *buffer;
         long lSize;

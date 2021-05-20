@@ -13,7 +13,7 @@ fig = plt.figure()
 axes = mplot3d.Axes3D(fig)
 
 # 读取stl文件
-m1 = mesh.Mesh.from_file(os.path.join(os.getcwd(),'test.stl'))
+m1 = mesh.Mesh.from_file(os.path.join(os.getcwd(),'simplified_piece.stl'))
 
 axes.plot_surface(m1.x, m1.y, m1.z)
 axes.plot_wireframe(m1.x, m1.y, m1.z, linewidth=0.25, color='black')

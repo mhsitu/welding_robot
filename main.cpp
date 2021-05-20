@@ -3,6 +3,7 @@
 #include <iostream>
 #include "coppeliaSim.h"
 #include "sys_log.h"
+#include "core/BsplineBasic.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
 #include "core/ACSRank_3D.hpp"
@@ -28,8 +29,8 @@ _simObjectHandle_Type *Joint[6];
 _simObjectHandle_Type *platform[2];
 
 /*Test*/
-BezierCurve<float, 3, 2> straight_line;
-BezierCurve<float, 2, 2> platform_angle;
+BezierCurve<float, 3> straight_line(2);
+BezierCurve<float, 2> platform_angle(2);
 Timer timer;
 int demo_type;
 bool is_running = false;
@@ -186,31 +187,128 @@ void Usr_ReadFromSimulation()
     current_pt[gamma] = Tip_op->obj_Data.orientation_3f[2];
 }
 
+inline void show_vector_improve()
+{
+    std::map<std::string, std::string> keywords;
+
+    std::vector<float> x1, y1, z1;
+    srand(time(0));
+    float r = 2;
+    float beta = 0.8;
+    x1.push_back(0);
+    y1.push_back(0);
+    z1.push_back(0);
+    x1.push_back(5);
+    y1.push_back(5);
+    z1.push_back(5);
+    x1.push_back(-2);
+    y1.push_back(-2);
+    z1.push_back(-2);
+    for(float i = 0; i < 5;)
+    {
+        x1.push_back(i);
+        y1.push_back(i);
+        z1.push_back(i);
+        i += 0.2;
+    }
+    // keywords.insert(std::pair<std::string, std::string>("c", "red"));
+    // keywords.insert(std::pair<std::string, std::string>("linewidth", "2"));
+    // plt::plot3(x1, y1, z1, keywords,1);
+
+    keywords.clear();
+    keywords.insert(std::pair<std::string, std::string>("c", "red"));
+    keywords.insert(std::pair<std::string, std::string>("marker", "^"));
+    plt::scatter(x1, y1, z1, 1,keywords,1);
+
+    x1.clear();
+    y1.clear();
+    z1.clear();
+    Point3<float> vector_a = Point3<float>(5,5,5);
+    for (int i(0); i < 1000; i++)
+    {
+        float phi = -M_PI + 2*M_PI*(float)(rand()) / (float)RAND_MAX;
+        float theta = -M_PI + 2*M_PI*(float)(rand()) / (float)RAND_MAX;
+        float x = r * sin(theta) * cos(phi);
+        float y = r * sin(theta) * sin(phi);
+        float z = r * cos(theta);
+        Point3<float> vector_b(x,y,z);
+        float cos_garmma = power(Point3<float>::dot(vector_b, vector_a) / (vector_a.norm() * vector_b.norm()),3);
+        x = beta*(1 + cos_garmma) * r * sin(theta) * cos(phi);
+        y = beta*(1 + cos_garmma) * r * sin(theta) * sin(phi);
+        z = beta*(1 + cos_garmma) * r * cos(theta);
+        x1.push_back(x);
+        y1.push_back(y);
+        z1.push_back(z);
+    }
+
+    keywords.clear();
+    keywords.insert(std::pair<std::string, std::string>("c", "blue"));
+    keywords.insert(std::pair<std::string, std::string>("marker", "o"));
+    plt::scatter(x1, y1, z1, 1, keywords, 1);
+}
+
 /**
 * @brief It's NOT recommended that user modefies this function.
 *        Plz programm the functions with the prefix "Usr_". 
 */
 int main(int argc, char *argv[])
 {
-    //读取工件模型
     STLReader model;
-    model.ReadFile("test.stl");
-    const std::vector<Triangles<float>> meshes = model.TriangleList();
-
-    // //搜索路径
     ACS_Rank SearchPath;
-    SearchPath.creatGridMap(meshes, 0.05, 10);
-    SearchPath.initFromGridMap();
-    SearchPath.searchBestPathOfPoints("weld_points.in", 10);
-    // ACS_GTSP GlobalRoute;
-    // GlobalRoute.readFromGraphFile("graph.in");
-    // GlobalRoute.computeSolution();
-    // 结果可视化
-    SearchPath.plot_route_point(2);
+    ACS_GTSP GlobalRoute;
+    /*
+        读取工件模型
+    */
+    model.readFile("./files/test.stl");
+    const std::vector<Triangles<float>> meshes = model.TriangleList();
+    
+    /*
+        搜索路径
+    */
+    SearchPath.creatGridMap(meshes, 0.05, 6,"./files/test_grid_map.in");
+    //SearchPath.readGridMap("./files/test_grid_map.in");
+    // SearchPath.plot_grid_map(1);
+    // SearchPath.show_plot();
+    SearchPath.searchBestPathOfPoints(10, "./files/weld_points.in", "./files/graph.in");
+
+    GlobalRoute.readFromGraphFile("./files/graph.in");
+    GlobalRoute.computeSolution();
+    GlobalRoute.read_segment(SearchPath.best_matrix, 1);
+
+    /*
+        结果可视化
+    */
+    GlobalRoute.plot_route_path(1);
+    SearchPath.plot_route_point(1);
     //SearchPath.plot_grid_map(1);
     SearchPath.show_plot();
-    exit(0);
 
+    /*
+        曲线平滑
+    */
+    const int pt_num = GlobalRoute.g_path_x.size() - 2;
+    BezierCurve<float, 3> smooth_curve(pt_num);
+    float **ctrl_points = new float *[pt_num];
+    for (int i = 0; i < pt_num; ++i)
+    {
+        ctrl_points[i] = new float[3];
+        ctrl_points[i][0] = GlobalRoute.g_path_x[i];
+        ctrl_points[i][1] = GlobalRoute.g_path_y[i];
+        ctrl_points[i][2] = GlobalRoute.g_path_z[i];
+    }
+    smooth_curve.SetParam(ctrl_points, 5);
+    
+    clock_t time = clock();
+
+    float res[3];
+    while (clock() - time < 5000)
+    {
+        plt::clf();
+        smooth_curve.getCurvePoint(clock - time, );
+        plt::pause(10);
+    }
+
+    exit(0);
 
     /*
         System Logger tool init.

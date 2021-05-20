@@ -4,19 +4,29 @@
 #include <math.h>
 
 // N = NUM_CTR_PT -1
-template <typename T, int DIM, int NUM_CTR_PT>
+template <typename T, int DIM>
 class BezierCurve {
  public:
-  T _CtrlPt[NUM_CTR_PT][DIM];
-  T _coeff[NUM_CTR_PT];
-  T _end_time;
-  BezierCurve() {
-    for (int j(0); j < NUM_CTR_PT; ++j) {
-      for (int i(0); i < DIM; ++i) {
-        _CtrlPt[j][i] = 0.;
-      }
-      _coeff[j] = 0.;
-    }
+   int NUM_CTR_PT;
+   T **_CtrlPt;
+   T *_coeff;
+   T _end_time;
+
+   BezierCurve(int _NUM_CTR_PT)
+   {
+        int NUM_CTR_PT = _NUM_CTR_PT;
+        _coeff = new T[NUM_CTR_PT];
+
+        _CtrlPt = new T*[NUM_CTR_PT];
+        for (int j(0); j < NUM_CTR_PT; ++j)
+        {
+            _CtrlPt[j] = new T[DIM];
+            for (int i(0); i < DIM; ++i)
+            {
+                _CtrlPt[j][i] = 0.;
+            }
+            _coeff[j] = 0.;
+        }
   }
 
   // ctrl pt 0: initial

@@ -31,6 +31,8 @@
 *.out
 *.app
 
+
+
 /doc/
 /build/
 /config/
@@ -38,3 +40,4 @@
 /*.config
 /*.mvdat
 /perf.data*
+*.in

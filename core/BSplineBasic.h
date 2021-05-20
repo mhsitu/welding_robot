@@ -30,17 +30,23 @@
  * *********************************************** <br/>
  */
 
-template <typename T, int DIM, int DEGREE, int NUM_MIDDLE, int CONST_LEVEL_INI,
+template <typename T, int DIM, int DEGREE, int CONST_LEVEL_INI,
           int CONST_LEVEL_FIN>
 class BS_Basic {
  public:
-  BS_Basic()
-      : NumKnots_(DEGREE + NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN +
+  BS_Basic(int _NUM_MIDDLE)
+      : NumKnots_(DEGREE + _NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN +
                   1),
-        NumCPs_(NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN) {
+        NumCPs_(_NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN) {
+    NUM_MIDDLE = _NUM_MIDDLE;
+    Knots_ = new T[DEGREE + NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN + 1];
     for (int i(0); i < NumKnots_; ++i) Knots_[i] = 0.;
+
+    CPoints_ = new T*[NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN];
     for (int i(0); i < NumCPs_; ++i) {
-      for (int j(0); j < DIM; ++j) CPoints_[i][j] = 0.;
+      CPoints_[i] = new T[DIM];
+      for (int j(0); j < DIM; ++j)
+        CPoints_[i][j] = 0.;
     }
     if (NumKnots_ < 2 * (DEGREE + 1)) {
       printf("Invalid setup (num_knots, degree): %d, %d\n", NumKnots_, DEGREE);
@@ -454,9 +460,10 @@ class BS_Basic {
   T fin_time_;
   int NumKnots_;
   int NumCPs_;
+  int NUM_MIDDLE;
 
-  T Knots_[DEGREE + NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN + 1];
-  T CPoints_[NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN][DIM];
+  T *Knots_;
+  T **CPoints_;
 };
 
 #endif

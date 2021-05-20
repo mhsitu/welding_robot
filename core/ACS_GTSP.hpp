@@ -37,7 +37,7 @@ typedef struct ACS_Tour
     {
         L = 0;
         int sz = path.size();
-        for (int i = 0; i < sz; i++)
+        for (int i = 0; i < sz-1; i++)
         {
             L += _dis[path[i].first][path[i].second];
         }
@@ -96,7 +96,6 @@ private:
     int *r1, *s, *r;            // agent k的出发城市，下一个点，当前点。
     int MAX_itera, index_itera; //最大迭代次数，迭代计数变量
     std::set<int> empty, *J;
-
     ACS_Tour *tour, best;
     Vertex3<float> *node;
     bool init_flag;
@@ -220,7 +219,7 @@ private:
 
 public:
     /*构造函数初始化参数*/
-
+    std::vector<float> g_path_x, g_path_y, g_path_z;
     // 无向图读取
     bool readFromGraphFile(std::string filename)
     {
@@ -268,16 +267,62 @@ public:
                 update_pheromone();   //更新信息素
                 printf("iteration %d:Best so far = %.2lf\n", index_itera, best.L);
                 if (last > best.L)
-                    last = best.L, bad_times = 0;
+                {
+                    last = best.L;
+                    bad_times = 0;
+                }
                 else
                     bad_times++; //记录当前未更新代数，若迭代多次未更新，认为进入局部最优
             }
             printf("Best in all = %.2lf\n", best.L); //输出目标值
             best.print();                            //输出路径
+
             return true;
         }
         else
             return false;
+    }
+
+    void read_all_segments(Agent<float>** &best_matrix)
+    {
+        for(int i = 0; i < best.path.size()-1; i++)
+        {
+            const std::vector<ACS_Node<float> *> *segment = best_matrix[best.path[i].first][best.path[i].second].getPath();
+            for(int j = 0; j < segment->size(); j++)
+            {
+                g_path_x.push_back((*segment)[j]->pt.x);
+                g_path_y.push_back((*segment)[j]->pt.y);
+                g_path_z.push_back((*segment)[j]->pt.z);
+            }
+        }
+    }
+
+    /*
+        i starts from 1.
+    */
+    void read_segment(Agent<float>** best_matrix, int i)
+    {
+        const std::vector<ACS_Node<float> *> *segment = best_matrix[best.path[i-1].first][best.path[i-1].second].getPath();
+        for(int j = 0; j < segment->size(); j++)
+        {
+            g_path_x.push_back((*segment)[j]->pt.x);
+            g_path_y.push_back((*segment)[j]->pt.y);
+            g_path_z.push_back((*segment)[j]->pt.z);
+        }
+    }
+
+    int path_segment_nums()
+    {
+        return best.path.size() - 1;
+    }
+
+    void plot_route_path(int figureNumber)
+    {
+        std::map<std::string, std::string> keywords;
+        keywords.insert(std::pair<std::string, std::string>("c", "green"));
+        //keywords.insert(std::pair<std::string, std::string>("linewidth", "4"));
+        keywords.insert(std::pair<std::string, std::string>("marker", "o"));
+        plt::scatter(g_path_x, g_path_y, g_path_z, 1,keywords,figureNumber);
     }
     ~ACS_GTSP(){};
 };
