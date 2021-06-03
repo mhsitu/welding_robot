@@ -7,14 +7,13 @@
 template <typename T, int DIM>
 class BezierCurve {
  public:
-   int NUM_CTR_PT;
    T **_CtrlPt;
    T *_coeff;
    T _end_time;
 
    BezierCurve(int _NUM_CTR_PT)
    {
-        int NUM_CTR_PT = _NUM_CTR_PT;
+        NUM_CTR_PT = _NUM_CTR_PT;
         _coeff = new T[NUM_CTR_PT];
 
         _CtrlPt = new T*[NUM_CTR_PT];
@@ -31,7 +30,7 @@ class BezierCurve {
 
   // ctrl pt 0: initial
   // ctrl pt n-1(end): final
-  bool SetParam(T** ctrl_pt, T fin_time) {
+  bool SetParam(T** &ctrl_pt, T fin_time) {
     _end_time = fin_time;
     T n_fact = _factorial(NUM_CTR_PT - 1);
     for (int j(0); j < NUM_CTR_PT; ++j) {
@@ -102,7 +101,8 @@ class BezierCurve {
   }
 
  private:
-  int _factorial(const int& n) {
+    int NUM_CTR_PT;
+    int _factorial(const int& n) {
     int ret = 1;
     for (int i(1); i < n + 1; ++i) ret *= (i);
 

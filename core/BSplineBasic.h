@@ -38,6 +38,7 @@ class BS_Basic {
       : NumKnots_(DEGREE + _NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN +
                   1),
         NumCPs_(_NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN) {
+
     NUM_MIDDLE = _NUM_MIDDLE;
     Knots_ = new T[DEGREE + NUM_MIDDLE + 2 + CONST_LEVEL_INI + CONST_LEVEL_FIN + 1];
     for (int i(0); i < NumKnots_; ++i) Knots_[i] = 0.;

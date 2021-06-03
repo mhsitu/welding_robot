@@ -179,7 +179,8 @@ public:
                 min_z = _it.vertex[i].z < min_z ? _it.vertex[i].z : min_z;
             }
         });
-/* 这段为了让显示更直观*/
+        printf("[Grid Map]max(%.2f, %.2f, %.2f), min(%.2f, %.2f, %.2f) \n", max_x, max_y, max_z, min_x, min_y, min_z);
+        /* 这段为了让显示更直观*/
         // T max_len = max_x - min_x;
         // max_len = max_y - min_y > max_len ? max_y - min_y:max_len;
         // max_len = max_z - min_z > max_len ? max_z - min_z:max_len;

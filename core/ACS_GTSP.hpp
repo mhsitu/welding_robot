@@ -319,7 +319,7 @@ public:
     void plot_route_path(int figureNumber)
     {
         std::map<std::string, std::string> keywords;
-        keywords.insert(std::pair<std::string, std::string>("c", "green"));
+        keywords.insert(std::pair<std::string, std::string>("c", "gray"));
         //keywords.insert(std::pair<std::string, std::string>("linewidth", "4"));
         keywords.insert(std::pair<std::string, std::string>("marker", "o"));
         plt::scatter(g_path_x, g_path_y, g_path_z, 1,keywords,figureNumber);

@@ -147,7 +147,6 @@ private:
                 tri.vertex[j].x = cpyfloat(p);
                 tri.vertex[j].y = cpyfloat(p);
                 tri.vertex[j].z = cpyfloat(p);
-                //pointList.push_back(Point3f(cpyfloat(p), cpyfloat(p), cpyfloat(p)));
             }
             p += 2; //跳过尾部标志
 

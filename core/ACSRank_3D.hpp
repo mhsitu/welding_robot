@@ -122,7 +122,6 @@ private:
     std::vector<Agent<float>> agents;       // 蚁群中每只蚂蚁
     Agent<float> best;                      // 当前最优蚂蚁
     std::vector<float> path_x, path_y, path_z;
-    std::vector<Point3<float>> route_points;
   
     /**
     * @brief next nodes of ant K.  
@@ -285,7 +284,7 @@ private:
                 local_min++;
             else
                 local_min = 0;
-            if(local_min >= 60)
+            if(local_min >= 50)
             {
                 //reset();
                 local_min = 0;
@@ -318,10 +317,10 @@ private:
     void initFromGridMap()
     {
         alpha = 1;
-        beta = 0.8;
+        beta = 0.6;
         rho = 0.8;
-        max_iteration = 100;// 自动收敛
-        colony_num = 100;    // 根据路径长度自适应
+        max_iteration = 150;// 自动收敛
+        colony_num = 80;    // 根据路径长度自适应
         pheromone_0 = 1;
         Q = 50;
         node_num = size_of_map();
@@ -412,6 +411,7 @@ private:
 
 public:
     Agent<float> **best_matrix;  
+    std::vector<Point3<float>> route_points;
     ACS_Rank()
     {
         nodes = NULL;
