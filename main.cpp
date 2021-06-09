@@ -296,7 +296,7 @@ void manual_input()
             }
 
             BS_Basic<float, 3, 0, 0, 0> smooth_curve(pt_num);
-            smooth_curve.SetParam(start_pt, end_pt, ctrl_pt, 200);
+            smooth_curve.SetParam(start_pt, end_pt, ctrl_pt, 150);
 
             clock_t base_t = clock();
             clock_t now_t = clock()-base_t;
@@ -313,10 +313,10 @@ void manual_input()
                     smooth_z.push_back(res[2]);
                     //printf("Curve point: %f, %f, %f, time:%d \n", res[0], res[1], res[2], now_t);
                 }
-            } while (now_t <= 200);
+            } while (now_t <= 150);
 
             //二次平滑
-            const float constrain = 0.1;
+            const float constrain = 0.05;
             pt_num = smooth_y.size();
             float second_start_pt[9] = {GlobalRoute.g_path_x[0], GlobalRoute.g_path_y[0], GlobalRoute.g_path_z[0],0,0,0,0,0,0}; 
             float second_end_pt[9] = {GlobalRoute.g_path_x[pt_num - 1], GlobalRoute.g_path_y[pt_num - 1], GlobalRoute.g_path_z[pt_num - 1],0,0,0,0,0,0};
@@ -334,12 +334,12 @@ void manual_input()
             smooth_y.clear();
             smooth_z.clear();
             BS_Basic<float, 3, 2, 2, 2> second_curve(pt_num);
-            second_curve.SetParam(second_start_pt,second_end_pt,second_pt, 5000);
+            second_curve.SetParam(second_start_pt,second_end_pt,second_pt, 6000);
             base_t = clock();
             now_t = clock()-base_t;
             do
             {
-                if(clock() - base_t - now_t >= 10)
+                if(clock() - base_t - now_t >= 50)
                 {
                     now_t = clock() - base_t;
                     second_curve.getCurvePoint(now_t, res);
@@ -348,7 +348,7 @@ void manual_input()
                     smooth_z.push_back(res[2]);
                     //printf("Second point: %f, %f, %f, time:%d \n", res[0], res[1], res[2], now_t);
                 }
-            } while (now_t <= 5000);
+            } while (now_t <= 6000);
             start_time = timer.getMs();
             is_running = true;
         }
