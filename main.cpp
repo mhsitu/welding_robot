@@ -21,6 +21,7 @@ enum Pose_t
     alpha,
     beta,
     _gamma
+    
 };
 
 _simObjectHandle_Type *Tip_target;
