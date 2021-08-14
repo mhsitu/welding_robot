@@ -1,9 +1,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "matplotlibcpp.h"
 #include <iostream>
-#include "coppeliaSim.h"
+#include "CoppeliaSim.h"
 #include "sys_log.h"
-#include "core/BsplineBasic.h"
+#include "core/BSplineBasic.h"
 #include "core/BezierCurve.h"
 #include "core/Timer.h"
 #include "core/ACSRank_3D.hpp"
@@ -20,7 +20,7 @@ enum Pose_t
     z,
     alpha,
     beta,
-    gamma
+    _gamma
 };
 
 _simObjectHandle_Type *Tip_target;
@@ -394,14 +394,14 @@ void Usr_ConfigSimulation()
     target_pt[z] = 1.42;
     target_pt[alpha] = 0;
     target_pt[beta] = M_PI_2 + M_PI_2/2;
-    target_pt[gamma] = -M_PI_2;
+    target_pt[_gamma] = -M_PI_2;
 
     Tip_target->obj_Target.position_3f[0] = target_pt[x] + 0;//1.7;
     Tip_target->obj_Target.position_3f[1] = target_pt[y] + 0;
     Tip_target->obj_Target.position_3f[2] = target_pt[z] + 0;
     Tip_target->obj_Target.orientation_3f[0] = target_pt[alpha];
     Tip_target->obj_Target.orientation_3f[1] = target_pt[beta];
-    Tip_target->obj_Target.orientation_3f[2] = target_pt[gamma];
+    Tip_target->obj_Target.orientation_3f[2] = target_pt[_gamma];
 }
 
 /**
@@ -416,7 +416,7 @@ void Usr_SendToSimulation()
     Tip_target->obj_Target.position_3f[2] = target_pt[z] + 0;
     Tip_target->obj_Target.orientation_3f[0] = target_pt[alpha];
     Tip_target->obj_Target.orientation_3f[1] = target_pt[beta];
-    Tip_target->obj_Target.orientation_3f[2] = target_pt[gamma];
+    Tip_target->obj_Target.orientation_3f[2] = target_pt[_gamma];
 }
 
 void Usr_ReadFromSimulation()
@@ -427,7 +427,7 @@ void Usr_ReadFromSimulation()
     current_pt[z] = Tip_op->obj_Data.position_3f[2] - 0;
     current_pt[alpha] = Tip_op->obj_Data.orientation_3f[0];
     current_pt[beta] = Tip_op->obj_Data.orientation_3f[1];
-    current_pt[gamma] = Tip_op->obj_Data.orientation_3f[2];
+    current_pt[_gamma] = Tip_op->obj_Data.orientation_3f[2];
 }
 
 inline void show_vector_improve()
